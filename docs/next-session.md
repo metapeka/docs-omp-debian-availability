@@ -22,7 +22,8 @@
 
 ## Режимы кэша и мониторинг
 
-Этапы 1–2 реализованы, детали и проверки — `docs/plan-cache-modes.md`.
+Этапы 1–2 реализованы, детали и проверки — `docs/plan-cache-modes.md`,
+повседневная инструкция — `docs/cheatsheet.md`.
 Установлено: `~/.local/bin/omp-mode`, `~/.omp/agent/extensions/cache-monitor.ts`,
 блок `statusLine` в `~/.omp/agent/config.yml`. Команда — `/cache`, статус — `↺ N%`
 и имя режима. Лимиты `warnCost`/`maxCost` пока **не стоят** (наблюдаем); `/mode`
