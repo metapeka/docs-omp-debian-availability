@@ -251,6 +251,7 @@ PY</code></pre>
           <tbody>
           <tr><td><code>cache-safe.yml</code></td><td>одна модель на всё, <code>thinking: high</code>, advisor/prewalk off, fallback только по квоте</td><td>обычная работа, длинные сессии, много сабагентов</td></tr>
           <tr><td><code>quality.yml</code></td><td>план и advisor на сильной модели, реализация на дешёвой</td><td>сложный рефакторинг, рискованная правка, перед PR</td></tr>
+          <tr><td><code>throughput.yml</code></td><td>concurrency 8, ревью на сильной модели, <code>fallbackOn: any</code></td><td>лимиты с запасом 4×+: важнее время, а не токены</td></tr>
           </tbody>
         </table>
       </div>
@@ -271,7 +272,7 @@ omp --config ~/.omp/presets/quality.yml</code></pre>
           </tbody>
         </table>
       </div>
-      <p class="small muted">Правило: ломать кэш можно, но осознанно — на границе задачи, а не посреди неё.</p>
+      <p class="small muted">Правило: ломать кэш можно, но осознанно — на границе задачи, а не посреди неё. Когда лимитов с запасом, холодные старты перестают быть проблемой денег и остаются проблемой времени (TTFT), поэтому дисциплину префикса держим ради latency.</p>
 
       <h2 id="caveats">Оговорки</h2>
       <ul>

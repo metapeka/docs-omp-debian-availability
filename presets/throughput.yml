@@ -1,0 +1,61 @@
+# «Пропускная способность»: лимитов с запасом, экономим не токены, а время.
+# Запуск: omp --config ~/.omp/presets/throughput.yml
+#
+# Идея: холодный старт сабагента (~4–10k) не проблема, поэтому можно
+# поднимать параллелизм, отдавать ревью сильной модели и падать на любую
+# ошибку в fallback. Кэш держим ради latency, а не ради денег.
+
+modelRoles:
+  default: cline-pass/deepseek-v4.1-flash-1017
+  smol: cline-pass/deepseek-v4.1-flash-1017
+  slow: cline-pass/deepseek-v4-pro
+  plan: "@slow"
+  advisor: "@slow"
+  task: "@default"
+  commit: "@smol"
+  tiny: "@smol"
+
+defaultThinkingLevel: high
+
+task:
+  maxConcurrency: 8             # 12 ядер, но RAM занята: 8 — потолок по памяти, не по CPU
+  workerThreads: 1
+  softRequestBudget: 300        # защита от зацикливания, не экономия
+  showResolvedModelBadge: true
+  speculativeLaunch: true
+  batch: true
+  agentModelOverrides:
+    reviewer: cline-pass/deepseek-v4-pro
+    security-reviewer: cline-pass/deepseek-v4-pro
+
+provider:
+  appendOnlyContext: auto
+
+providers:
+  cacheRetention: auto
+  cacheWarming: idle
+  cacheWarmingStrategy: auto
+
+display:
+  cacheMissMarker: true
+  showTokenUsage: true
+
+mcp:
+  startupTimeoutMs: 0
+
+retry:
+  modelFallback: true
+  fallbackOn: any               # кэш дёшев: важнее не встать на ошибке
+
+compaction:
+  methodOrder: [remote, handoff, snapcompact, shake, soft]
+  midTurnEnabled: true
+
+advisor:
+  enabled: true
+  reviewMode: agent-end         # turn — только для критичных сессий
+  reviewInterval: 1
+  syncBacklog: "off"
+
+prewalk:
+  enabled: false                # ручной /prewalk, когда план важнее скорости старта

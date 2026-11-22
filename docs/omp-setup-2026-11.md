@@ -469,7 +469,7 @@ Read-only по JSONL сессий: `message.usage.input` / `cacheRead`; hit = `c
 
 ### Пресеты
 
-`presets/cache-safe.yml` — одна модель на всё, thinking `high`, advisor/prewalk off, fallback только по квоте. `presets/quality.yml` — план и advisor на сильной модели, реализация на дешёвой. Запуск: `omp --config ~/.omp/presets/<name>.yml`.
+`presets/cache-safe.yml` — одна модель на всё, thinking `high`, advisor/prewalk off, fallback только по квоте. `presets/quality.yml` — план и advisor на сильной модели, реализация на дешёвой. `presets/throughput.yml` — concurrency 8, ревью на сильной модели, `fallbackOn: any`; для лимитов с запасом. Запуск: `omp --config ~/.omp/presets/<name>.yml`.
 
 ### Провайдеры (проверка 2026-11-22)
 
