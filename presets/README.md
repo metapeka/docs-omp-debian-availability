@@ -1,6 +1,6 @@
 # Пресеты OMP
 
-Два оверлея конфигурации. Не заменяют `~/.omp/agent/config.yml`, а накладываются на один запуск
+Три оверлея конфигурации. Не заменяют `~/.omp/agent/config.yml`, а накладываются на один запуск
 через `--config`. Ничего не персистят.
 
 | Файл | Режим | Когда |
@@ -23,6 +23,21 @@ omp --config ~/.omp/presets/quality.yml
 alias ompc='omp --config ~/.omp/presets/cache-safe.yml'
 alias ompq='omp --config ~/.omp/presets/quality.yml'
 ```
+
+## Как проверить
+
+`omp --config <file> config list` оверлей **не** показывает (и не падает на несуществующем пути) —
+проверять так:
+
+```bash
+PI_CONFIG_FILES=~/.omp/presets/throughput.yml omp config list | grep -E 'maxConcurrency|advisor.enabled'
+#   task.maxConcurrency = 8 (number)
+#   advisor.enabled = true (boolean)
+```
+
+Значения вне объявленного enum (`retry.fallbackOn`, `advisor.reviewMode`, `defaultThinkingLevel`, …)
+OMP молча игнорирует и оставляет дефолт — предупреждения в stderr нет. Настоящий прогон проверяет
+только `--config`: неверный YAML и отсутствующий файл там падают жёстко (`Config overlay not found`).
 
 ## Правила, без которых пресет не работает
 
