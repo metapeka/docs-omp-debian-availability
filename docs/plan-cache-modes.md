@@ -127,8 +127,12 @@ statusLine:
   режим, модель, thinking (из эффективных настроек), ход и сумму по сессии;
 - предупреждение: путь проверен временно ослабленным порогом — тост с реальными числами
   пришёл; production-порог (`turnIndex >= 1 && prompt >= 4000 && hit < 50`) восстановлен;
-- `pi.getThinkingLevel()` на 19.1.0 отдаёт не строку, поэтому thinking читается из
-  реестра настроек (`lookup("defaultThinkingLevel").get(pi.pi.settings)`);
+- `pi.getThinkingLevel()` на 19.1.0 отдаёт `"off"` при `--thinking off`, но `undefined`
+  при `auto` для моделей с уровнями `off|auto` (flash, glm, minimax); на pro `auto`
+  резолвится в `"high"` и возвращается строкой. Поэтому thinking в `/cache` читается
+  из реестра настроек (`lookup("defaultThinkingLevel").get(pi.pi.settings)`) — это
+  сконфигурированное значение, а не разрешённое. Баг отправлен в upstream:
+  [can1357/oh-my-pi#20128](https://github.com/can1357/oh-my-pi/issues/20128).
 - смена модели посреди сессии **не гарантирует** промах: `/model` на `glm-5.3-flash`
   дал hit 99.6% (кэш этой модели уже существовал), поэтому предупреждение срабатывает
   только по фактическому hit, а не по факту смены.
