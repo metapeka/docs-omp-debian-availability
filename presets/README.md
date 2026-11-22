@@ -24,6 +24,37 @@ alias ompc='omp --config ~/.omp/presets/cache-safe.yml'
 alias ompq='omp --config ~/.omp/presets/quality.yml'
 ```
 
+## Режимы одной командой
+
+```bash
+cp presets/omp-mode ~/.local/bin/ && chmod +x ~/.local/bin/omp-mode
+omp-mode cache-safe            # ≡ OMP_MODE=cache-safe omp --config ~/.omp/presets/cache-safe.yml
+omp-mode quality -p 'план…'    # остальные аргументы уходят в omp как есть
+```
+
+Режим выбирается **до** первого сообщения: смена модели/thinking посреди сессии
+ломает кэш префикса. Без обёртки работает обычный `omp` — пресет не навязывается.
+
+## Мониторинг кэша
+
+```bash
+cp presets/extensions/cache-monitor.ts ~/.omp/agent/extensions/
+```
+
+Расширение показывает в статус-строке `↺ N%` (hit rate последнего хода) и режим,
+если он задан через `omp-mode`. Команда `/cache` печатает режим, модель, thinking,
+последний ход и сумму по сессии. Предупреждение приходит, когда hit падает ниже
+50% не на первом ходе — это признак смены префикса.
+
+Чтобы статус было видно, в `~/.omp/agent/config.yml`:
+
+```yaml
+statusLine:
+  preset: custom
+  leftSegments: ["vim", "model", "mode", "path", "git", "pr"]
+  rightSegments: ["session_name", "token_total", "cost", "context_pct", "status"]
+```
+
 ## Как проверить
 
 `omp --config <file> config list` оверлей **не** показывает (и не падает на несуществующем пути) —

@@ -1,0 +1,33 @@
+#!/bin/sh
+# omp-mode — запуск OMP с пресетом кэша. Режим выбирается до первого сообщения:
+# смена модели/thinking/tool-set посреди сессии ломает кэш префикса.
+#
+#   omp-mode cache-safe   обычная работа, длинные сессии
+#   omp-mode quality      план и ревью на сильной модели
+#   omp-mode throughput   лимитов с запасом, важнее время
+#
+# Каталог пресетов: $OMP_PRESETS_DIR (по умолчанию ~/.omp/presets).
+set -eu
+
+name=${1:-}
+case "$name" in
+	cache-safe | quality | throughput) ;;
+	"" | -h | --help)
+		printf 'usage: omp-mode <cache-safe|quality|throughput> [omp args...]\n' >&2
+		[ -n "$name" ] && exit 0
+		exit 2
+		;;
+	*)
+		printf "omp-mode: неизвестный пресет '%s': можно cache-safe, quality, throughput\n" "$name" >&2
+		exit 2
+		;;
+esac
+shift
+
+conf=${OMP_PRESETS_DIR:-"$HOME/.omp/presets"}/"$name".yml
+if [ ! -f "$conf" ]; then
+	printf 'omp-mode: нет файла пресета %s\n' "$conf" >&2
+	exit 2
+fi
+
+OMP_MODE=$name exec omp --config "$conf" "$@"
