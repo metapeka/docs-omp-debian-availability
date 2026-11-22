@@ -467,6 +467,10 @@ prewalk:
 
 Read-only по JSONL сессий: `message.usage.input` / `cacheRead`; hit = `cacheRead / (input + cacheRead)`. `omp stats --json` даёт `cacheRate` и `byAgentType`, но сначала пишет `~/.omp/stats.db`.
 
+### Пресеты
+
+`presets/cache-safe.yml` — одна модель на всё, thinking `high`, advisor/prewalk off, fallback только по квоте. `presets/quality.yml` — план и advisor на сильной модели, реализация на дешёвой. Запуск: `omp --config ~/.omp/presets/<name>.yml`.
+
 ### Провайдеры (проверка 2026-11-22)
 
 | Провайдер | Минимум | TTL | Инвалидаторы |

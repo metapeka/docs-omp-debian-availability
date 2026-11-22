@@ -1,0 +1,49 @@
+# «Качество»: сильная модель для плана и финального ревью, кэш местами ломается.
+# Запуск: omp --config ~/.omp/presets/quality.yml
+#
+# Идея: реализация на дешёвой модели, plan и advisor — на сильной.
+# Один холодный старт на переключении, зато ошибки ловятся раньше.
+# Внутри задачи модель не менять; advisor — только на финале хода.
+
+modelRoles:
+  default: cline-pass/deepseek-v4.1-flash-1017
+  slow: cline-pass/deepseek-v4-pro
+  plan: "@slow"
+  advisor: "@slow"
+  task: "@default"
+  commit: "@default"
+  tiny: "@default"
+
+defaultThinkingLevel: high
+
+provider:
+  appendOnlyContext: auto
+
+providers:
+  cacheRetention: auto
+  cacheWarming: idle
+  cacheWarmingStrategy: auto
+
+display:
+  cacheMissMarker: true
+  showTokenUsage: true
+
+mcp:
+  startupTimeoutMs: 0
+
+retry:
+  modelFallback: true
+  fallbackOn: usage-limit
+
+compaction:
+  methodOrder: [remote, handoff, snapcompact, shake, soft]
+  midTurnEnabled: true
+
+advisor:
+  enabled: true
+  reviewMode: agent-end       # не каждый ход: один обзор на финале
+  reviewInterval: 1
+  syncBacklog: "off"
+
+prewalk:
+  enabled: false              # ручной /prewalk, если нужен

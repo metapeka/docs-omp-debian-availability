@@ -1,0 +1,44 @@
+# «Суперкэш»: максимально стабильный префикс, минимум переключений.
+# Запуск: omp --config ~/.omp/presets/cache-safe.yml
+#
+# Идея: одна модель на всё, пинненый thinking, никаких prewalk/advisor,
+# fallback только по исчерпанию квоты. Компромисс — качество ревью ниже,
+# зато hit rate максимальный.
+
+modelRoles:
+  default: cline-pass/deepseek-v4.1-flash-1017
+  smol: cline-pass/deepseek-v4.1-flash-1017   # тот же, чтобы titles/виджеты не уводили на другую модель
+  task: "@default"
+  commit: "@default"
+  tiny: "@default"
+
+defaultThinkingLevel: high
+
+provider:
+  appendOnlyContext: auto
+
+providers:
+  cacheRetention: auto
+  cacheWarming: idle
+  cacheWarmingStrategy: auto
+
+display:
+  cacheMissMarker: true
+  showTokenUsage: true
+
+mcp:
+  startupTimeoutMs: 0
+
+retry:
+  modelFallback: true
+  fallbackOn: usage-limit
+
+compaction:
+  methodOrder: [remote, handoff, snapcompact, shake, soft]
+  midTurnEnabled: false        # не компактить между tool-вызовами; риск overflow на очень длинных циклах
+
+advisor:
+  enabled: false
+
+prewalk:
+  enabled: false

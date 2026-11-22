@@ -50,6 +50,7 @@
     ["cache.html", "providers", "Провайдеры", "Кэш"],
     ["cache.html", "evidence", "Внешние замеры", "Кэш"],
     ["cache.html", "measure", "Как мерить", "Кэш"],
+    ["cache.html", "presets", "Пресеты cache-safe и quality", "Кэш"],
     ["cache.html", "caveats", "Оговорки", "Кэш"],
     ["sources.html", "links", "Источники", "Источники"],
     ["sources.html", "status", "Что проверено", "Источники"]

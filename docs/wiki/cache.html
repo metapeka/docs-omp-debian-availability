@@ -243,6 +243,36 @@ for f in glob.glob('**/*.jsonl', recursive=True):
 PY</code></pre>
       <p class="small muted"><code>omp stats --json</code> даёт <code>cacheRate</code> и разбивку <code>byAgentType</code> (main/subagent/advisor), но сначала синхронизирует сессии в <code>~/.omp/stats.db</code> — это уже запись.</p>
 
+      <h2 id="presets">Пресеты</h2>
+      <p>Два оверлея в репозитории (<code>presets/</code>). Не заменяют <code>config.yml</code>, накладываются на один запуск.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Пресет</th><th>Что фиксирует</th><th>Когда</th></tr></thead>
+          <tbody>
+          <tr><td><code>cache-safe.yml</code></td><td>одна модель на всё, <code>thinking: high</code>, advisor/prewalk off, fallback только по квоте</td><td>обычная работа, длинные сессии, много сабагентов</td></tr>
+          <tr><td><code>quality.yml</code></td><td>план и advisor на сильной модели, реализация на дешёвой</td><td>сложный рефакторинг, рискованная правка, перед PR</td></tr>
+          </tbody>
+        </table>
+      </div>
+<pre><code>cp presets/*.yml ~/.omp/presets/
+omp --config ~/.omp/presets/cache-safe.yml
+omp --config ~/.omp/presets/quality.yml</code></pre>
+
+      <h3>Что вы приобретаете, ломая кэш</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Поломка</th><th>Выигрыш</th><th>Когда оправдано</th></tr></thead>
+          <tbody>
+          <tr><td>Смена модели</td><td>качество на сложном участке</td><td>задача длинная, ошибка дороже одного prefill</td></tr>
+          <tr><td><code>prewalk</code></td><td>сильный план + дешёвое исполнение</td><td>долгая реализация после плана</td></tr>
+          <tr><td>Advisor</td><td>второе мнение, ловит пропущенное</td><td>рискованные изменения, финал перед PR</td></tr>
+          <tr><td>Compaction</td><td>продолжение за пределом окна</td><td>только когда реально упёрлись в контекст</td></tr>
+          <tr><td>Сабагенты</td><td>изоляция и параллельность</td><td>почти всегда: цена — один холодный ход ~4–9k</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted">Правило: ломать кэш можно, но осознанно — на границе задачи, а не посреди неё.</p>
+
       <h2 id="caveats">Оговорки</h2>
       <ul>
         <li>Для <code>cline-pass</code> в доках не подтверждены ни <code>cacheRetention</code>, ни <code>shared-prompt-cache</code>, ни TTL. Факт кэша виден только по <code>cacheRead</code> в usage.</li>
