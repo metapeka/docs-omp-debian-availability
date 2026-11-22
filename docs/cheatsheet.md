@@ -1,5 +1,7 @@
 # Шпаргалка: режимы, мониторинг, диагностика
 
+Онлайн: https://metapeka.github.io/docs-omp-debian-availability/wiki/guide.html
+
 Коротко: как запускать, что означает каждая цифра, что делать, когда что-то
 пошло не так. Полный план и замеры — `docs/plan-cache-modes.md`, вики —
 `docs/wiki/cache.html`.

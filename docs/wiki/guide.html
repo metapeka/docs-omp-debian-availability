@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Как работать — OMP × Orca</title>
+<meta name="description" content="Ежедневный цикл: запуск режима, /cache, переключения и диагностика кэша префикса.">
+<link rel="stylesheet" href="assets/wiki.css">
+</head>
+<body data-page-title="Как работать">
+<a class="skip" href="#main">К содержимому</a>
+<div class="shell">
+
+  <aside class="sidebar" aria-label="Навигация">
+    <a class="brand" href="index.html"><span class="dot"></span> OMP × Orca</a>
+    <p class="brand-sub">Настройка · ноябрь 2026</p>
+
+    <div class="search">
+      <input id="searchInput" type="search" placeholder="Поиск (Ctrl+K)" aria-label="Поиск по вики" autocomplete="off">
+      <div class="search-results" id="searchResults" role="listbox"></div>
+    </div>
+
+    <p class="nav-group-title">Разделы</p>
+    <ul class="nav-list">
+      <li><a href="index.html"><span class="num">0</span>Обзор</a></li>
+      <li><a href="setup.html"><span class="num">1</span>Настройка</a></li>
+      <li><a href="config.html"><span class="num">2</span>Конфиги</a></li>
+      <li><a href="orca.html"><span class="num">3</span>Orca и OMP</a></li>
+      <li><a href="orchestration.html"><span class="num">4</span>Оркестрация</a></li>
+      <li><a href="cache.html"><span class="num">5</span>Кэш</a></li>
+      <li><a href="sources.html"><span class="num">6</span>Источники</a></li>
+      <li><a href="guide.html"><span class="num">7</span>Как работать</a></li>
+    </ul>
+
+    <p class="nav-group-title">На этой странице</p>
+    <ul class="toc" id="toc"></ul>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn sidebar-toggle" id="navToggle" type="button" aria-label="Открыть меню">☰</button>
+      <div class="crumbs">Вики / <b id="crumbTitle">Как работать</b></div>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeBtn" type="button">◐ Авто</button>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+      <div class="page-head">
+        <p class="eyebrow">Практика · ежедневный цикл</p>
+        <h1>Режимы, мониторинг и диагностика</h1>
+        <p class="lead">Что набирать в терминале и в сессии, что означают цифры и что делать,
+          когда счёт вырос. Пресеты по умолчанию <b>не включены</b>: режим выбирается при запуске.</p>
+      </div>
+
+      <div class="callout ok">
+        <span class="tag">Проверка за пять секунд</span>
+        В сессии наберите <code>/cache</code>: первое поле — режим. Если там «без пресета»,
+          пресет не загружен; в статус-строке тогда просто <code>↺ N%</code>, без имени режима.
+      </div>
+
+      <h2 id="start">Запуск и режимы</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Задача</th><th>Команда в терминале</th><th>Кэш</th></tr></thead>
+          <tbody>
+          <tr><td>обычная работа</td><td><code>omp-mode cache-safe</code></td><td>самый стабильный префикс</td></tr>
+          <tr><td>сложная задача, план и ревью на сильной модели</td><td><code>omp-mode quality</code></td><td>ломается на переходах plan/advisor</td></tr>
+          <tr><td>важнее время, лимитов с запасом</td><td><code>omp-mode throughput</code></td><td>та же дисциплина, больше параллелизма</td></tr>
+          <tr><td>без пресета</td><td><code>omp</code></td><td>глобальный <code>config.yml</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout warn">
+        <span class="tag">До первого сообщения</span>
+        Режим задаёт модель, thinking и набор инструментов. Переключать их посреди задачи —
+          это и есть холодный префикс. Ошибка в имени пресета даёт код 2 и ничего не запускает.
+      </div>
+
+      <h2 id="screen">Что на экране</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Сегмент</th><th>Пример</th><th>Смысл</th></tr></thead>
+          <tbody>
+          <tr><td><code>status</code></td><td><code>cache-safe ↺ 98%</code></td><td>режим и hit rate последнего запроса</td></tr>
+          <tr><td><code>token_total</code></td><td><code>12.4k</code></td><td>токены текущего контекста</td></tr>
+          <tr><td><code>cost</code></td><td><code>$0.0042</code></td><td>стоимость сессии</td></tr>
+          <tr><td><code>context_pct</code></td><td><code>12%</code></td><td>заполнение окна</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><code>↺ N%</code> — доля кэша в промпте: <code>cacheRead / (input + cacheRead)</code>.
+        <code>↺ …</code> значит, что ходов ещё не было.</p>
+
+      <h2 id="cache">Команда /cache</h2>
+<pre><code>режим: cache-safe · cline-pass/deepseek-v4.1-flash-1017 · thinking high ·
+ход: ↺ 98% · in 51 · cached 2560 · $0.0000 ·
+сессия: $0.0000, ходов 1, ↺ 98%</code></pre>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Поле</th><th>Откуда</th><th>Что значит</th></tr></thead>
+          <tbody>
+          <tr><td>режим</td><td><code>OMP_MODE</code> от <code>omp-mode</code></td><td>какой пресет загружен; «без пресета» — запуск голым <code>omp</code></td></tr>
+          <tr><td>модель</td><td>активная модель сессии</td><td>если тут Pro — сработала роль plan/advisor/reviewer</td></tr>
+          <tr><td>thinking</td><td>эффективная настройка</td><td>у моделей <code>off|auto</code> видно <code>auto</code>; разрешённый уровень скрыт</td></tr>
+          <tr><td>ход: ↺ / in / cached / $</td><td><code>turn_end.message.usage</code></td><td>последний запрос: hit, новый input, из кэша, цена</td></tr>
+          <tr><td>сессия: $ / ходов / ↺</td><td>накопление расширения</td><td>сумма и средний hit по всей сессии</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Предупреждение «Кэш префикса: hit N%» приходит, когда hit &lt; 50% на ходе не первом
+        и промпт ≥ 4000 токенов. Это сигнал смены префикса, а не ошибка сам по себе.</p>
+
+      <h2 id="switch">Переключения и их цена</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Действие</th><th>Как</th><th>Что с кэшем</th></tr></thead>
+          <tbody>
+          <tr><td>сменить модель</td><td><code>/model:cline-pass/deepseek-v4-pro</code></td><td>промах возможен, но <b>не гарантирован</b>: у новой модели может быть свой кэш</td></tr>
+          <tr><td>сменить thinking</td><td><code>/effort &lt;уровень&gt;</code></td><td>меняет namespace; у <code>off|auto</code>-моделей выбора почти нет</td></tr>
+          <tr><td>plan mode</td><td><code>--plan-yolo</code> при запуске</td><td>новые tools и model — промах</td></tr>
+          <tr><td>MCP и скиллы</td><td>только до старта сессии</td><td>поздняя регистрация — промах</td></tr>
+          <tr><td>продолжить сессию</td><td><code>--continue</code>, <code>--resume</code></td><td>история и кэш-ключ восстанавливаются</td></tr>
+          <tr><td>начать заново</td><td><code>/new</code></td><td>новый namespace, всё холодное</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">
+        <span class="tag">Проверено</span>
+        <code>omp-mode quality --continue</code> восстанавливает модель <b>сессии</b>, а не пресета:
+        сессия на Pro останется на Pro. Флаги пресета (advisor, fallback, compaction) применяются,
+        модель — нет. Нужна модель пресета — начинайте новую сессию.
+      </div>
+
+      <h2 id="diag">Диагностика: симптом → что делать</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Симптом</th><th>Сначала</th><th>Потом</th></tr></thead>
+          <tbody>
+          <tr><td>«дорого»</td><td><code>/cache</code>: цена хода и сессии</td><td><code>omp stats --json</code> — общая картина</td></tr>
+          <tr><td>«кэш не работает»</td><td><code>↺</code> в статусе и в <code>/cache</code></td><td><code>stats</code> → <code>overall.cacheRate</code></td></tr>
+          <tr><td>пришло предупреждение о промахе</td><td>что менял за 1–2 хода</td><td>вернулся ли <code>↺</code> на следующем ходе</td></tr>
+          <tr><td><code>/cache</code> — неизвестная команда</td><td>расширение не загрузилось</td><td>проверить <code>~/.omp/agent/extensions/cache-monitor.ts</code></td></tr>
+          <tr><td>режим не тот</td><td>строка <code>status</code> и <code>/cache</code></td><td><code>PI_CONFIG_FILES=… omp config list</code></td></tr>
+          <tr><td>кто тратит</td><td><code>stats</code> → <code>byAgentType</code></td><td><code>byModel</code> — какая модель</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="commands">Готовые команды</h2>
+<pre><code># сколько стоил период и какой был кэш
+omp stats --json | jq '.overall | {totalCost, totalRequests, cacheRate, cacheSavings}'
+
+# по агентам: main vs subagent
+omp stats --json | jq -r '.byAgentType[] | [.agentType, .totalRequests, .totalCost] | @tsv'
+
+# по моделям
+omp stats --json | jq -r '.byModel[] | [.model, .totalRequests, .totalCost] | @tsv'
+
+# цены модели (input / output / cacheRead за 1M)
+omp models --json | jq -r '.models[] | select(.id|test("deepseek")) | [.id,.cost.input,.cost.output,.cost.cacheRead] | @tsv'
+
+# проверить, что пресет применяется
+PI_CONFIG_FILES=$HOME/.omp/presets/throughput.yml omp config list | grep -E 'maxConcurrency|advisor.enabled'</code></pre>
+      <p class="small muted"><code>omp stats</code> синхронизирует <code>~/.omp/stats.db</code> (это запись).
+        Скрипт по JSONL сессий в разделе «Кэш» — только чтение.</p>
+
+      <h2 id="example">Пример чтения</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Метрика</th><th>Значение (эта машина)</th></tr></thead>
+          <tbody>
+          <tr><td>запросов / стоимость</td><td>706 / $1.95</td></tr>
+          <tr><td><code>cacheRate</code> / <code>cacheSavings</code></td><td>98.2% / 96.2%</td></tr>
+          <tr><td>main</td><td>386 запросов, $1.02</td></tr>
+          <tr><td>subagent</td><td>254 запроса, $0.83</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Сабагенты — почти половина счёта; кэш экономит около 96% от цены без кэша.</p>
+
+      <h2 id="rules">Пять правил</h2>
+      <ul>
+        <li>Режим и модель — до первого сообщения, не посреди задачи.</li>
+        <li>Менять модель только на границе задачи и смотреть <code>↺</code> после.</li>
+        <li>MCP и скиллы — до старта.</li>
+        <li>Продолжение — <code>--continue</code>/<code>--resume</code>, не <code>/new</code>.</li>
+        <li>Раз в неделю смотреть <code>stats</code>: без числа «стало лучше» не отличить от «стало дороже».</li>
+      </ul>
+
+      <nav class="pager" aria-label="Навигация по разделам">
+        <a href="sources.html"><span class="dir">Назад</span>← Источники</a>
+        <a class="next" href="index.html"><span class="dir">В начало</span>Обзор →</a>
+      </nav>
+    </main>
+  </div>
+</div>
+<script src="assets/wiki.js"></script>
+</body>
+</html>

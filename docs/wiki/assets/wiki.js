@@ -9,7 +9,8 @@
     { file: "orca.html", title: "Orca и OMP", num: "3" },
     { file: "orchestration.html", title: "Оркестрация", num: "4" },
     { file: "cache.html", title: "Кэш", num: "5" },
-    { file: "sources.html", title: "Источники", num: "6" }
+    { file: "sources.html", title: "Источники", num: "6" },
+    { file: "guide.html", title: "Как работать", num: "7" }
   ];
 
   /* Static cross-page index: [page, anchor, title, section] */
@@ -53,7 +54,15 @@
     ["cache.html", "presets", "Пресеты cache-safe и quality", "Кэш"],
     ["cache.html", "caveats", "Оговорки", "Кэш"],
     ["sources.html", "links", "Источники", "Источники"],
-    ["sources.html", "status", "Что проверено", "Источники"]
+    ["sources.html", "status", "Что проверено", "Источники"],
+    ["guide.html", "start", "Запуск и режимы", "Как работать"],
+    ["guide.html", "screen", "Что на экране", "Как работать"],
+    ["guide.html", "cache", "Команда /cache", "Как работать"],
+    ["guide.html", "switch", "Переключения и их цена", "Как работать"],
+    ["guide.html", "diag", "Диагностика", "Как работать"],
+    ["guide.html", "commands", "Готовые команды", "Как работать"],
+    ["guide.html", "example", "Пример чтения", "Как работать"],
+    ["guide.html", "rules", "Пять правил", "Как работать"]
   ];
 
   var LS_THEME = "ompwiki.theme";

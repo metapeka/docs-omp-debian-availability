@@ -23,6 +23,7 @@ xdg-open docs/wiki/index.html
 | `orchestration.html` | Run → Task → Dispatch, handoff, сообщения |
 | `cache.html` | Кэш префикса: что ломает, замеры, чек-лист (ресерч 2026-11-22) |
 | `sources.html` | Источники, что проверено |
+| `guide.html` | Как работать: режимы, `/cache`, диагностика |
 
 ## Возможности
 
