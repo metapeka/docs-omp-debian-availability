@@ -1,5 +1,7 @@
 # OMP × Orca — вики
 
+**Онлайн:** https://metapeka.github.io/docs-omp-debian-availability/wiki/
+
 Офлайн-документация по настройке OMP 19.1 на Debian 13 и работе с Orca 1.4.268.
 
 ## Открыть
