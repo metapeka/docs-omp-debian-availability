@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Кэш префикса — OMP × Orca</title>
+<link rel="stylesheet" href="assets/wiki.css">
+</head>
+<body data-page-title="Кэш префикса">
+<a class="skip" href="#main">К содержимому</a>
+<div class="shell">
+
+  <aside class="sidebar" aria-label="Навигация">
+    <a class="brand" href="index.html"><span class="dot"></span> OMP × Orca</a>
+    <p class="brand-sub">Настройка · ноябрь 2026</p>
+
+    <div class="search">
+      <input id="searchInput" type="search" placeholder="Поиск (Ctrl+K)" aria-label="Поиск по вики" autocomplete="off">
+      <div class="search-results" id="searchResults" role="listbox"></div>
+    </div>
+
+    <p class="nav-group-title">Разделы</p>
+    <ul class="nav-list">
+      <li><a href="index.html"><span class="num">0</span>Обзор</a></li>
+      <li><a href="setup.html"><span class="num">1</span>Настройка</a></li>
+      <li><a href="config.html"><span class="num">2</span>Конфиги</a></li>
+      <li><a href="orca.html"><span class="num">3</span>Orca и OMP</a></li>
+      <li><a href="orchestration.html"><span class="num">4</span>Оркестрация</a></li>
+      <li><a href="cache.html"><span class="num">5</span>Кэш</a></li>
+      <li><a href="sources.html"><span class="num">6</span>Источники</a></li>
+    </ul>
+
+    <p class="nav-group-title">На этой странице</p>
+    <ul class="toc" id="toc"></ul>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn sidebar-toggle" id="navToggle" type="button" aria-label="Открыть меню">☰</button>
+      <div class="crumbs">Вики / <b id="crumbTitle">Кэш префикса</b></div>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeBtn" type="button">Тема: авто</button>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+      <div class="page-head">
+        <p class="eyebrow">Раздел 5 · ресерч <time datetime="2026-11-22">22 ноября 2026</time></p>
+        <h1>Кэш префикса: как не долбить провайдера</h1>
+        <p class="lead">Что именно кэшируется, что ломает кэш гарантированно, а что безопасно.
+          Замеры — на этой машине, OMP 19.1.0, модель <code>cline-pass/deepseek-v4.1-flash-1017</code>.</p>
+      </div>
+
+      <div class="callout ok">
+        <span class="tag">Три ответа</span>
+        Спавн сабагента <b>не</b> ломает кэш родителя — это отдельная сессия.
+        Смена режима, модели, thinking level или tool-set — <b>ломает</b>.
+        Дороже всего не TTL, а мелкие мутации середины: поздний MCP, compaction, retry на другую модель.
+      </div>
+
+      <h2 id="prefix">Что входит в префикс</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Слой</th><th>В префиксе</th><th>Комментарий</th></tr></thead>
+          <tbody>
+          <tr><td>System prompt</td><td>да</td><td>block 0 + один trailing <code>&lt;project-context&gt;</code>. Anthropic-breakpoint стоит <b>до</b> него, поэтому разные cwd делят статическую часть</td></tr>
+          <tr><td>Tool schemas</td><td>да</td><td>порядок и описания тулов — часть байтов; <code>inlineToolDescriptors</code> переносит описания в промпт</td></tr>
+          <tr><td>Messages</td><td>да</td><td>append-only лог; compaction заменяет голову истории</td></tr>
+          <tr><td>Модель / thinking / retention</td><td>namespace</td><td>провайдерский cache key: смена = другой кэш, даже при том же тексте</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted">Источники: <code>omp://system-prompt-customization.md:18</code>, <code>cfg://provider.appendOnlyContext</code>.</p>
+
+      <h2 id="breaks">Ломает гарантированно</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Действие</th><th>Почему</th></tr></thead>
+          <tbody>
+          <tr><td><code>/model</code></td><td>другая модель = другой кэш; плюс имя модели в system prompt при <code>includeModelInPrompt: true</code></td></tr>
+          <tr><td>Thinking level (<code>/effort</code>, <kbd>Shift</kbd>+<kbd>Tab</kbd>)</td><td>явно в списке причин miss; Responses сбрасывает chain при смене options</td></tr>
+          <tr><td>Вход/выход plan mode</td><td>меняются tools + model/plan-контекст</td></tr>
+          <tr><td>Vibe mode</td><td>tool-set сокращается до <code>vibe_*</code></td></tr>
+          <tr><td><code>goal create</code> / <code>goal drop</code></td><td>добавляется/удаляется <code>goal</code>-тул</td></tr>
+          <tr><td><code>prewalk</code> handoff</td><td>смена модели на первом <code>edit</code></td></tr>
+          <tr><td>Compaction</td><td>новая голова контекста</td></tr>
+          <tr><td>MCP add/remove/<code>/mcp reload</code></td><td>меняются схемы тулов и instructions</td></tr>
+          <tr><td>Установка/скрытие скилла</td><td>меняется каталог скиллов в system prompt</td></tr>
+          <tr><td><code>/clear</code>, <code>/new</code>, смена профиля</td><td>ротация provider state / изолированные кэши</td></tr>
+          <tr><td>Retry-fallback на другую модель</td><td>тихо уводит запрос в чужой namespace</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted">Список причин miss: <code>omp://settings.md:978</code>; tool-set и model — <code>omp://compaction.md</code>, <code>omp://provider-quirks.md</code>.</p>
+
+      <h2 id="safe">Что не ломает</h2>
+      <ul>
+        <li>Новые сообщения, tool results, async-результаты, advisor-notes, goal-continuation — это append.</li>
+        <li>Спавн <code>task</code>-сабагентов и <code>write agent://&lt;id&gt;</code>: у ребёнка своя история, родительский префикс не трогается.</li>
+        <li><code>/skill:&lt;name&gt;</code> и <code>read skill://</code> — тело приходит сообщением, промпт не меняется.</li>
+        <li><code>chillax</code> посреди хода — документировано как «without invalidating the prompt cache».</li>
+        <li>Смена approval mode — локальный гейт, не часть запроса.</li>
+        <li>Переключение терминала/вкладки в Orca — разные процессы, на кэш не влияет.</li>
+      </ul>
+
+      <h2 id="numbers">Замеры на этой машине</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Сессия</th><th>Ходов</th><th>input</th><th>cacheRead</th><th>hit</th></tr></thead>
+          <tbody>
+          <tr><td>Основная</td><td>129</td><td>258k</td><td>25.4M</td><td><span class="badge ok">99.0%</span></td></tr>
+          <tr><td>SkillsPlugins</td><td>40</td><td>154k</td><td>4.31M</td><td><span class="badge ok">96.5%</span></td></tr>
+          <tr><td>AgentsModels</td><td>19</td><td>88k</td><td>1.43M</td><td><span class="badge ok">94.2%</span></td></tr>
+          <tr><td>DocsInventory</td><td>16</td><td>158k</td><td>1.61M</td><td><span class="badge ok">91.1%</span></td></tr>
+          <tr><td>McpServers</td><td>12</td><td>154k</td><td>1.08M</td><td><span class="badge ok">87.5%</span></td></tr>
+          <tr><td>CommunityBuzz</td><td>12</td><td>50k</td><td>326k</td><td><span class="badge ok">86.7%</span></td></tr>
+          <tr><td><b>Итого</b></td><td><b>281</b></td><td><b>1.22M</b></td><td><b>36.9M</b></td><td><span class="badge ok"><b>96.8%</b></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="small muted">
+        <li>В основной сессии ровно 1 холодный ход (первый, 9 372 input) и 1 промежуточный на 39.7% (второй); остальные ≥ 85%.</li>
+        <li><code>cacheWrite</code> везде 0: маршрут <code>cline-pass</code> не биллит запись, поэтому <code>display.cacheMissMarker</code> (требует <code>cacheWrite &gt; 0</code>) на нём бесполезен.</li>
+        <li>Каждый новый сабагент платит один холодный prefill ~4–9k токенов — это цена изоляции, а не поломка кэша.</li>
+      </ul>
+
+      <h2 id="workflow">Чек-лист воркфлоу</h2>
+      <div class="progress-wrap" id="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-row">
+          <span class="progress-num" id="progressNum">0 / 0</span>
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+          <button class="icon-btn" id="resetTasks" type="button">сбросить</button>
+        </div>
+      </div>
+      <ul class="tasks">
+        <li><label class="task"><input type="checkbox" data-task="c1-freeze"><span class="body">
+          Заморозить «форму» до первого запроса: профиль → модель → thinking → режим → MCP → скиллы
+          <span class="why">Всё, что меняет tools или system prompt, делается только здесь.</span></span></label></li>
+        <li><label class="task"><input type="checkbox" data-task="c2-append"><span class="body">
+          Внутри задачи — только append: сообщения, tool results, сабагенты
+          <span class="why">Не переключать модель/effort/режимы, не делать <code>/mcp reload</code>, не ставить скиллы.</span></span></label></li>
+        <li><label class="task"><input type="checkbox" data-task="c3-plan"><span class="body">
+          Plan mode — один раз в начале: <code>--plan-yolo</code> или отдельная сессия под план
+          <span class="why">Вход и выход из plan mode меняют tools и model.</span></span></label></li>
+        <li><label class="task"><input type="checkbox" data-task="c4-model"><span class="body">
+          Модель менять только на границе задачи
+          <span class="why">Холодный старт новой модели должен окупиться длиной задачи.</span></span></label></li>
+        <li><label class="task"><input type="checkbox" data-task="c5-mcp"><span class="body">
+          MCP поднимать до первого хода: <code>mcp.startupTimeoutMs: 0</code> (или 2000)
+          <span class="why">Поздняя регистрация сервера меняет tool-set посреди сессии.</span></span></label></li>
+        <li><label class="task"><input type="checkbox" data-task="c6-batch"><span class="body">
+          Сабагенты — батчем, один <code>agent</code> и общий <code>context</code>; продолжение через <code>write agent://&lt;id&gt;</code>
+          <span class="why">Разные типы агентов = разные system prompt = отдельные кэши.</span></span></label></li>
+        <li><label class="task"><input type="checkbox" data-task="c7-resume"><span class="body">
+          Продолжение — через <code>resume</code>/fork, не через <code>/new</code>
+          <span class="why">Resume восстанавливает prompt-cache key; branch — нет.</span></span></label></li>
+        <li><label class="task"><input type="checkbox" data-task="c8-compaction"><span class="body">
+          Compaction: <code>remote</code>/<code>handoff</code> раньше <code>soft</code>; не провоцировать вручную
+          <span class="why">Суммаризация на живом префиксе дешевле холодной.</span></span></label></li>
+        <li><label class="task"><input type="checkbox" data-task="c9-advisor"><span class="body">
+          Advisor и prewalk — выключены, пока не нужны
+          <span class="why">Advisor не ломает основной кэш, но каждый цикл — отдельная холодная сессия.</span></span></label></li>
+        <li><label class="task"><input type="checkbox" data-task="c10-fallback"><span class="body">
+          <code>retry.fallbackOn: usage-limit</code>
+          <span class="why">Иначе сетевой сбой уводит на другую модель и обнуляет кэш.</span></span></label></li>
+        <li><label class="task"><input type="checkbox" data-task="c11-observe"><span class="body">
+          Включить <code>display.showTokenUsage</code> и мерить hit rate раз в неделю
+          <span class="why">Без числа «стало лучше» не отличить от «стало дороже».</span></span></label></li>
+      </ul>
+
+      <h2 id="config">Конфиг</h2>
+<pre><code>provider:
+  appendOnlyContext: auto
+
+providers:
+  cacheRetention: auto        # long — только если паузы &gt;5 мин и провайдер даёт 1h
+  cacheWarming: idle          # off для one-shot/CI
+  cacheWarmingStrategy: auto
+
+display:
+  cacheMissMarker: true
+  showTokenUsage: true
+
+mcp:
+  startupTimeoutMs: 0         # все серверы до первого хода; 2000 — компромисс
+
+retry:
+  modelFallback: true
+  fallbackOn: usage-limit
+
+compaction:
+  methodOrder: [remote, handoff, snapcompact, shake, soft]
+  midTurnEnabled: true        # false — только если cache важнее риска overflow
+
+advisor:
+  enabled: false
+
+prewalk:
+  enabled: false</code></pre>
+      <p class="small muted">Если видите промахи «на ровном месте» — запините <code>defaultThinkingLevel</code> (<code>high</code>): классификатор <code>auto</code> может менять effort между ходами.</p>
+
+      <h2 id="providers">Провайдеры</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Провайдер</th><th>Минимум</th><th>TTL</th><th>Инвалидаторы</th><th>Статус</th></tr></thead>
+          <tbody>
+          <tr><td>Anthropic</td><td>~512 (зависит от модели)</td><td>5 мин, продлевается хитом; 1h опционально</td><td>точный список не подтверждён</td><td><span class="badge ok">есть breakpoints</span></td></tr>
+          <tr><td>OpenAI</td><td>1024</td><td>не подтверждён</td><td>tools должны совпадать по составу и порядку; только append</td><td><span class="badge info">авто</span></td></tr>
+          <tr><td>Gemini</td><td>2048 / 4096</td><td>explicit — 1h по умолчанию</td><td>похожий префикс подряд; в лупе Gemini 4 нужно ≥2050 новых токенов</td><td><span class="badge warn">explicit нет на 4.x</span></td></tr>
+          <tr><td>DeepSeek</td><td>не подтверждён</td><td>не подтверждён</td><td>не подтверждён</td><td><span class="badge info">авто</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted">Первичные доки Anthropic/OpenAI/DeepSeek из этой среды не открылись; данные — из официальных кукбуков и индекса доков, проверка 2026-11-22. Где стоит «не подтверждён» — не закладывайте в бюджет.</p>
+
+      <h2 id="evidence">Внешние замеры</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Источник</th><th>Дата</th><th>Что показал</th></tr></thead>
+          <tbody>
+          <tr><td><a href="https://github.com/openai/codex/issues/35925">Codex #35925</a></td><td>2026-07-29</td><td>27.3M input, 78% cached; 57% промахов — mid-loop append, 14% — сжатие контекста, 11% — retry</td></tr>
+          <tr><td><a href="https://github.com/openai/codex/issues/25604">Codex #25604</a></td><td>2026-06-01</td><td>при контексте &gt;150K запись вытеснялась: 20 вызовов с <code>cached=0</code>, 71% fresh input</td></tr>
+          <tr><td><a href="https://github.com/openai/codex/issues/24704">Codex #24704</a></td><td>2026-05-27</td><td>форк-сабагент с новым <code>prompt_cache_key</code> переплачивает префикс; медиана 98% на продолжениях</td></tr>
+          <tr><td><a href="https://github.com/anomalyco/opencode/issues/24841">OpenCode #24841</a></td><td>2026-04-28</td><td>перезапись прошлого assistant-сообщения → инвалидация хвоста; 63% расходов в cache write</td></tr>
+          <tr><td><a href="https://github.com/anomalyco/opencode/issues/5416">OpenCode #5416</a></td><td>2026-02-23</td><td>system prompt разбит на stable/dynamic, убран <code>cwd</code> из схемы: first-prompt hit 0% → 97.6%</td></tr>
+          <tr><td><a href="https://www.reddit.com/r/ClaudeCode/comments/1r9dfpx/cache_engineering_how_to_build_successful_agents/">r/ClaudeCode: Cache engineering</a></td><td>2026-02-19</td><td>«Never add or remove tools mid-session»; динамику — через system-reminder в сообщении, не правкой промпта</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="measure">Как мерить</h2>
+      <p>Read-only по JSONL сессий; то же считает <code>omp stats</code>, но без записи <code>stats.db</code>.</p>
+<pre><code>cd ~/.omp/agent/sessions/&lt;project&gt; &amp;&amp; python3 - &lt;&lt;'PY'
+import json, glob
+for f in glob.glob('**/*.jsonl', recursive=True):
+    i=r=n=0
+    for line in open(f, encoding='utf-8', errors='replace'):
+        try: u=(json.loads(line).get('message') or {}).get('usage')
+        except: continue
+        if not u: continue
+        i+=u.get('input',0); r+=u.get('cacheRead',0); n+=1
+    if n: print(f"{100*r/(i+r):5.1f}%  {n:3d}t  {f[-40:]}")
+PY</code></pre>
+      <p class="small muted"><code>omp stats --json</code> даёт <code>cacheRate</code> и разбивку <code>byAgentType</code> (main/subagent/advisor), но сначала синхронизирует сессии в <code>~/.omp/stats.db</code> — это уже запись.</p>
+
+      <h2 id="caveats">Оговорки</h2>
+      <ul>
+        <li>Для <code>cline-pass</code> в доках не подтверждены ни <code>cacheRetention</code>, ни <code>shared-prompt-cache</code>, ни TTL. Факт кэша виден только по <code>cacheRead</code> в usage.</li>
+        <li>Общий кэш между сабагентом и родителем возможен только на моделях с <code>shared-prompt-cache</code>; для текущей модели это не подтверждено.</li>
+        <li>Порог, по которому <code>cacheMissMarker</code> решает, что запрос «потерял» кэш, в доках не описан.</li>
+        <li>Влияние thinking/effort на кэш у Anthropic/OpenAI официально не подтверждено; OMP относит смену thinking к причинам miss.</li>
+      </ul>
+
+      <nav class="pager" aria-label="Навигация по разделам">
+        <a href="orchestration.html"><span class="dir">Назад</span>← Оркестрация</a>
+        <a class="next" href="sources.html"><span class="dir">Дальше</span>Источники →</a>
+      </nav>
+    </main>
+  </div>
+</div>
+<script src="assets/wiki.js"></script>
+</body>
+</html>

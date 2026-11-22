@@ -397,13 +397,96 @@ orca orchestration inbox --terminal run:<run_id> --limit 50
 
 ---
 
-## 10. HTML-вики
+## 10. Кэш префикса (ресерч 22.11.2026)
+
+Полная версия с чек-листом — `docs/wiki/cache.html`.
+
+**Коротко:** спавн сабагента не ломает кэш родителя (отдельная сессия); смена модели, thinking, режима или tool-set — ломает; дороже всего мелкие мутации середины (поздний MCP, compaction, retry-fallback).
+
+### Что входит в префикс
+
+system prompt (block 0 + trailing `<project-context>`) → tool schemas → messages. Anthropic-breakpoint стоит до `<project-context>`, поэтому разные cwd делят статическую часть. Ключ кэша — провайдерский, модель-специфичный.
+
+### Ломает гарантированно
+
+`/model` · thinking level · вход/выход plan mode · vibe mode · `goal create|drop` · prewalk handoff · compaction · MCP add/remove/reload · установка скилла · `/clear`, `/new`, смена профиля · retry-fallback на другую модель.
+
+### Не ломает
+
+Новые сообщения и tool results · спавн `task` и `write agent://<id>` · `/skill:<name>` · `chillax` · смена approval mode · переключение терминала в Orca.
+
+### Замеры (эта машина, OMP 19.1.0)
+
+| Сессия | Ходов | input | cacheRead | hit |
+|---|---|---|---|---|
+| Основная | 129 | 258k | 25.4M | 99.0% |
+| SkillsPlugins | 40 | 154k | 4.31M | 96.5% |
+| DocsInventory | 16 | 158k | 1.61M | 91.1% |
+| McpServers | 12 | 154k | 1.08M | 87.5% |
+| **Итого** | **281** | **1.22M** | **36.9M** | **96.8%** |
+
+`cacheWrite` = 0 на `cline-pass`, поэтому `display.cacheMissMarker` там не работает.
+
+### Правила
+
+1. Заморозить форму до первого запроса: профиль → модель → thinking → режим → MCP → скиллы.
+2. Внутри задачи — только append.
+3. Plan mode — один раз в начале (`--plan-yolo` или отдельная сессия).
+4. Модель менять на границе задачи.
+5. MCP — до первого хода (`mcp.startupTimeoutMs: 0`), иначе tool-set меняется посреди сессии.
+6. Сабагенты — батчем, один `agent` и общий `context`; продолжение через `write agent://<id>`.
+7. Продолжение — `resume`/fork, не `/new`.
+8. Compaction: `remote`/`handoff` раньше `soft`.
+9. Advisor и prewalk выключены, пока не нужны.
+10. `retry.fallbackOn: usage-limit`, иначе сбой уводит на другую модель.
+
+```yaml
+provider:
+  appendOnlyContext: auto
+providers:
+  cacheRetention: auto
+  cacheWarming: idle
+  cacheWarmingStrategy: auto
+display:
+  cacheMissMarker: true
+  showTokenUsage: true
+mcp:
+  startupTimeoutMs: 0
+retry:
+  modelFallback: true
+  fallbackOn: usage-limit
+compaction:
+  methodOrder: [remote, handoff, snapcompact, shake, soft]
+advisor:
+  enabled: false
+prewalk:
+  enabled: false
+```
+
+### Как мерить
+
+Read-only по JSONL сессий: `message.usage.input` / `cacheRead`; hit = `cacheRead / (input + cacheRead)`. `omp stats --json` даёт `cacheRate` и `byAgentType`, но сначала пишет `~/.omp/stats.db`.
+
+### Провайдеры (проверка 2026-11-22)
+
+| Провайдер | Минимум | TTL | Инвалидаторы |
+|---|---|---|---|
+| Anthropic | ~512 (зависит от модели) | 5 мин с продлением; 1h опционально | список не подтверждён |
+| OpenAI | 1024 | не подтверждён | tools должны совпадать по составу и порядку |
+| Gemini | 2048 / 4096 | explicit 1h | похожий префикс подряд; Gemini 4 — ≥2050 новых токенов |
+| DeepSeek | не подтверждён | не подтверждён | авто, детали не подтверждены |
+
+Внешние замеры: Codex #35925 (78% cached, 57% промахов — mid-loop append), #25604 (вытеснение записи при >150K), OpenCode #24841 (63% расходов в cache write из-за перезаписи истории), #5416 (first-prompt hit 0% → 97.6% после stable/dynamic split).
+
+---
+
+## 11. HTML-вики
 
 `docs/wiki/index.html` — офлайн-вики без зависимостей: сайдбар, TOC, поиск (Ctrl+K), тёмная/светлая тема, интерактивный чек-лист с сохранением в localStorage, SVG-схемы. Открывается напрямую из файловой системы.
 
 ---
 
-## 11. Источники
+## 12. Источники
 
 - `omp://settings.md`, `omp://mcp-config.md`, `omp://skills.md`, `omp://task-agent-discovery.md`, `omp://approval-mode.md`, `omp://config-usage.md`
 - `cfg://` — фактические дефолты этой сборки

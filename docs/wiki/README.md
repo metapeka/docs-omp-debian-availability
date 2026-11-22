@@ -21,6 +21,7 @@ xdg-open docs/wiki/index.html
 | `config.html` | `config.yml`, `mcp.json`, ключи, антипаттерны |
 | `orca.html` | Кто владеет чем, запуск, размещение MCP/скиллов |
 | `orchestration.html` | Run → Task → Dispatch, handoff, сообщения |
+| `cache.html` | Кэш префикса: что ломает, замеры, чек-лист (ресерч 2026-11-22) |
 | `sources.html` | Источники, что проверено |
 
 ## Возможности

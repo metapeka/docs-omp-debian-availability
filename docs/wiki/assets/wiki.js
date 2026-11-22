@@ -8,7 +8,8 @@
     { file: "config.html", title: "Конфиги", num: "2" },
     { file: "orca.html", title: "Orca и OMP", num: "3" },
     { file: "orchestration.html", title: "Оркестрация", num: "4" },
-    { file: "sources.html", title: "Источники", num: "5" }
+    { file: "cache.html", title: "Кэш", num: "5" },
+    { file: "sources.html", title: "Источники", num: "6" }
   ];
 
   /* Static cross-page index: [page, anchor, title, section] */
@@ -40,6 +41,16 @@
     ["orchestration.html", "observe", "Наблюдение", "Оркестрация"],
     ["orchestration.html", "choose", "Когда что использовать", "Оркестрация"],
     ["orchestration.html", "pitfalls", "Подводные камни", "Оркестрация"],
+    ["cache.html", "prefix", "Что входит в префикс", "Кэш"],
+    ["cache.html", "breaks", "Ломает гарантированно", "Кэш"],
+    ["cache.html", "safe", "Что не ломает", "Кэш"],
+    ["cache.html", "numbers", "Замеры на этой машине", "Кэш"],
+    ["cache.html", "workflow", "Чек-лист воркфлоу", "Кэш"],
+    ["cache.html", "config", "Конфиг под кэш", "Кэш"],
+    ["cache.html", "providers", "Провайдеры", "Кэш"],
+    ["cache.html", "evidence", "Внешние замеры", "Кэш"],
+    ["cache.html", "measure", "Как мерить", "Кэш"],
+    ["cache.html", "caveats", "Оговорки", "Кэш"],
     ["sources.html", "links", "Источники", "Источники"],
     ["sources.html", "status", "Что проверено", "Источники"]
   ];
