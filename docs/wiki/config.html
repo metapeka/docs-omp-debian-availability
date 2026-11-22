@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Конфиги — OMP × Orca</title>
+<link rel="stylesheet" href="assets/wiki.css">
+</head>
+<body data-page-title="Конфиги">
+<a class="skip" href="#main">К содержимому</a>
+<div class="shell">
+
+  <aside class="sidebar" aria-label="Навигация">
+    <a class="brand" href="index.html"><span class="dot"></span> OMP × Orca</a>
+    <p class="brand-sub">Настройка · ноябрь 2026</p>
+
+    <div class="search">
+      <input id="searchInput" type="search" placeholder="Поиск (Ctrl+K)" aria-label="Поиск по вики" autocomplete="off">
+      <div class="search-results" id="searchResults" role="listbox"></div>
+    </div>
+
+    <p class="nav-group-title">Разделы</p>
+    <ul class="nav-list">
+      <li><a href="index.html"><span class="num">0</span>Обзор</a></li>
+      <li><a href="setup.html"><span class="num">1</span>Настройка</a></li>
+      <li><a href="config.html"><span class="num">2</span>Конфиги</a></li>
+      <li><a href="orca.html"><span class="num">3</span>Orca и OMP</a></li>
+      <li><a href="orchestration.html"><span class="num">4</span>Оркестрация</a></li>
+      <li><a href="sources.html"><span class="num">5</span>Источники</a></li>
+    </ul>
+
+    <p class="nav-group-title">На этой странице</p>
+    <ul class="toc" id="toc"></ul>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn sidebar-toggle" id="navToggle" type="button" aria-label="Открыть меню">☰</button>
+      <div class="crumbs">Вики / <b id="crumbTitle">Конфиги</b></div>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeBtn" type="button">◐ Авто</button>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+      <div class="page-head">
+        <p class="eyebrow">Раздел 2</p>
+        <h1>Готовые конфиги</h1>
+        <p class="lead">Слить с существующим, не перезаписывать: сейчас в файле уже есть
+          <code>modelRoles.default</code>, тема, composer и <code>defaultThinkingLevel</code>.</p>
+      </div>
+
+      <div class="callout warn">
+        <span class="tag">Перед правкой</span>
+        <code>cp ~/.omp/agent/config.yml ~/.omp/agent/config.yml.bak</code>. Массивы в YAML
+        <b>заменяются</b>, а не сливаются; проектный <code>bash.patterns</code> добавляется в начало, а не затирает глобальные.
+      </div>
+
+      <h2 id="config-yml"><code>config.yml</code> целиком</h2>
+<pre><code># ~/.omp/agent/config.yml
+tools:
+  approvalMode: write
+  restrictedFolders:
+    - ~/.ssh
+    - ~/.gnupg
+    - ~/.aws
+    - ~/.kube
+    - ~/.config/gh
+    - ~/.password-store
+    - ~/secrets
+
+bash:
+  gitGuard: true
+  direnv: auto
+  patterns:
+    - { match: "sudo *", approval: prompt }
+    - { match: "systemctl *", approval: prompt }
+    - { match: "git push --force*", approval: prompt }
+    - { match: "rm -rf /*", approval: deny }
+    - { match: "dd * of=/dev/*", approval: deny }
+    - { match: "mkfs*", approval: deny }
+    - { match: "curl * | sh*", approval: deny }
+
+secrets:
+  enabled: true
+
+providers:
+  webKeyless: false
+
+modelRoles:
+  default: cline-pass/deepseek-v4.1-flash-1017
+  smol: cline-pass/minimax-m3.1-flash      # сверить: omp models --kind chat
+  slow: cline-pass/deepseek-v4-pro
+  task: "@smol"
+  commit: "@smol"
+  tiny: "@smol"
+
+retry:
+  enabled: true
+  modelFallback: true
+  fallbackChains:
+    default: [cline-pass/deepseek-v4-pro]
+    smol: [cline-pass/deepseek-v4.1-flash-1017]
+
+task:
+  maxConcurrency: 6
+  workerThreads: 0
+  softRequestBudget: 150
+  showResolvedModelBadge: true
+  isolation:
+    enabled: true
+    merge: patch
+    apply: true
+
+isolation:
+  backend: rcopy
+
+worktree:
+  base: ~/worktrees
+  clone: false
+
+lsp:
+  lazy: true
+  formatOnWrite: false
+  diagnosticsOnEdit: false
+
+display:
+  showTokenUsage: true
+
+composer:
+  predictions: false
+
+mcp:
+  startupTimeoutMs: 1000</code></pre>
+
+      <h2 id="mcp-json"><code>mcp.json</code></h2>
+      <p>Только если реально нужны Postgres или свежие доки библиотек. Глобальный файл — общий для всех worktree Orca.</p>
+<pre><code>{
+  "$schema": "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json",
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": { "Authorization": "Bearer ${CONTEXT7_API_KEY}" }
+    },
+    "postgres": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["postgres-mcp", "--access-mode=restricted"],
+      "env": { "DATABASE_URI": "DATABASE_URI" },
+      "timeout": 120000,
+      "instructions": false
+    }
+  },
+  "disabledServers": ["filesystem", "memory", "sequential-thinking", "fetch", "playwright"]
+}</code></pre>
+      <div class="callout">
+        <span class="tag">Секреты</span>
+        <code>"DATABASE_URI": "DATABASE_URI"</code> — голое имя переменной: OMP возьмёт значение из окружения
+        (файл <code>.env</code> подхватывается, если вы его создали). Ключа в самом <code>mcp.json</code> нет.
+        <code>auth.type: "apikey"</code> ничего не подставляет. Поле <code>cwd</code> в примере опущено:
+        для сервера, не зависящего от проекта, задайте его равным домашнему каталогу.
+      </div>
+
+      <h2 id="keys">Ключи, которые важны</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ключ</th><th>Дефолт</th><th>Ставить</th><th>Почему</th></tr></thead>
+          <tbody>
+          <tr><td><code>tools.approvalMode</code></td><td>yolo</td><td><code>write</code></td><td>Спрашивает shell; в yolo критичные паттерны игнорируются</td></tr>
+          <tr><td><code>tools.restrictedFolders</code></td><td>[]</td><td>список</td><td>Спрашивает всегда, включая yolo; матчит cwd для bash</td></tr>
+          <tr><td><code>tools.approval.bash</code></td><td>—</td><td>не задавать</td><td>Headless-сабагенты не могут ответить → отказ</td></tr>
+          <tr><td><code>bash.patterns</code></td><td>[]</td><td>deny/prompt</td><td>Не покрывает <code>eval</code>; это policy, не sandbox</td></tr>
+          <tr><td><code>providers.webKeyless</code></td><td>true</td><td><code>false</code></td><td>Иначе keyless Parallel для web_search</td></tr>
+          <tr><td><code>modelRoles.smol</code></td><td>= default</td><td>дешёвая</td><td>Иначе «дешёвый воркер» идёт на дорогой модели</td></tr>
+          <tr><td><code>task.maxConcurrency</code></td><td>32</td><td>6 / 10–12</td><td>8 ядер / 16 ядер; сабагенты ждут API, не CPU</td></tr>
+          <tr><td><code>task.workerThreads</code></td><td>4</td><td><code>0</code></td><td>Воркеры включаются только при ≥9 одновременных</td></tr>
+          <tr><td><code>isolation.backend</code></td><td>auto</td><td><code>rcopy</code></td><td>ext4: reflink/btrfs недоступны, overlay не смонтирован</td></tr>
+          <tr><td><code>worktree.clone</code></td><td>true</td><td><code>false</code></td><td>На ext4 это полная копия, а не CoW</td></tr>
+          <tr><td><code>lsp.formatOnWrite</code></td><td>false</td><td>false</td><td>Иначе массовый reformat при каждом write</td></tr>
+          <tr><td><code>lsp.enabled</code></td><td>true</td><td>true</td><td><code>false</code> не отключает LSP из write/edit</td></tr>
+          <tr><td><code>mcp.startupTimeoutMs</code></td><td>250</td><td>1000</td><td>Холодный npx/uvx не успевает</td></tr>
+          <tr><td><code>tui.mouse</code></td><td>false</td><td>false</td><td>Иначе колесо не скроллит</td></tr>
+          <tr><td><code>display.showTokenUsage</code></td><td>false</td><td>true</td><td>Контроль расхода на каждом ходе</td></tr>
+          <tr><td><code>composer.predictions</code></td><td>true</td><td>false</td><td>Лишний запрос модели на каждый ход</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="donts">Чего не делать</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Не делать</th><th>Что произойдёт</th></tr></thead>
+          <tbody>
+          <tr><td><code>tools.approval.bash: prompt</code> глобально</td><td>Каждый сабагент с bash получит отказ вместо вопроса</td></tr>
+          <tr><td><code>isolation.backend: reflink</code></td><td>ext4 не умеет FICLONE → фолбэк и лишние попытки</td></tr>
+          <tr><td><code>lsp.formatOnWrite: true</code></td><td>Гигантские диффы, конфликты со стилем репозитория</td></tr>
+          <tr><td><code>tui.mouse: true</code></td><td>Колесо перестаёт скроллить, выделение только Shift+drag</td></tr>
+          <tr><td><code>compaction.strategy</code></td><td>Ключа нет (советы блогов под omp 16.x)</td></tr>
+          <tr><td><code>shellCommandPrefix</code> как env-обёртка</td><td>Нативный шелл его игнорирует</td></tr>
+          <tr><td><code>modelRoles.judge</code> без нативного бэкенда</td><td><code>prewalk.auto</code>, <code>autoParallel</code>, <code>find</code> молча не работают</td></tr>
+          <tr><td>Проектный <code>.omp/config.yml</code> вне git</td><td>Новый worktree Orca его не увидит</td></tr>
+          <tr><td><code>symbolPreset: nerd</code> без Nerd Font</td><td>«Тофу» вместо иконок; авто-апгрейд не откатит</td></tr>
+          <tr><td>Запуск из подкаталога</td><td>Проектные настройки не применятся</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="order">Порядок применения</h2>
+      <ol>
+        <li>Бэкап и <code>tools</code> + <code>bash</code> (безопасность) — проверить новой сессией.</li>
+        <li><code>secrets</code>, <code>providers</code> — перезапуск не нужен, читается на старте.</li>
+        <li><code>modelRoles</code> + <code>retry</code> — сверить через <code>/model → Roles</code>.</li>
+        <li><code>task</code>, <code>isolation</code>, <code>worktree</code> — проверить одним тестовым фан-аутом.</li>
+        <li><code>lsp</code>, <code>display</code>, <code>composer</code>, <code>mcp</code> — по вкусу.</li>
+      </ol>
+
+      <nav class="pager" aria-label="Навигация по разделам">
+        <a href="setup.html"><span class="dir">Назад</span>← Настройка</a>
+        <a class="next" href="orca.html"><span class="dir">Дальше</span>Orca и OMP →</a>
+      </nav>
+    </main>
+  </div>
+</div>
+<script src="assets/wiki.js"></script>
+</body>
+</html>

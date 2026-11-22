@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orca и OMP — OMP × Orca</title>
+<link rel="stylesheet" href="assets/wiki.css">
+</head>
+<body data-page-title="Orca и OMP">
+<a class="skip" href="#main">К содержимому</a>
+<div class="shell">
+
+  <aside class="sidebar" aria-label="Навигация">
+    <a class="brand" href="index.html"><span class="dot"></span> OMP × Orca</a>
+    <p class="brand-sub">Настройка · ноябрь 2026</p>
+
+    <div class="search">
+      <input id="searchInput" type="search" placeholder="Поиск (Ctrl+K)" aria-label="Поиск по вики" autocomplete="off">
+      <div class="search-results" id="searchResults" role="listbox"></div>
+    </div>
+
+    <p class="nav-group-title">Разделы</p>
+    <ul class="nav-list">
+      <li><a href="index.html"><span class="num">0</span>Обзор</a></li>
+      <li><a href="setup.html"><span class="num">1</span>Настройка</a></li>
+      <li><a href="config.html"><span class="num">2</span>Конфиги</a></li>
+      <li><a href="orca.html"><span class="num">3</span>Orca и OMP</a></li>
+      <li><a href="orchestration.html"><span class="num">4</span>Оркестрация</a></li>
+      <li><a href="sources.html"><span class="num">5</span>Источники</a></li>
+    </ul>
+
+    <p class="nav-group-title">На этой странице</p>
+    <ul class="toc" id="toc"></ul>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn sidebar-toggle" id="navToggle" type="button" aria-label="Открыть меню">☰</button>
+      <div class="crumbs">Вики / <b id="crumbTitle">Orca и OMP</b></div>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeBtn" type="button">◐ Авто</button>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+      <div class="page-head">
+        <p class="eyebrow">Раздел 3</p>
+        <h1>Orca и OMP: кто чем владеет</h1>
+        <p class="lead">Orca — лаунчер, UI и оркестратор процессов. Конфигурация, MCP, скиллы и агенты
+          принадлежат OMP. Смешивать уровни — главный источник путаницы.</p>
+      </div>
+
+      <h2 id="ownership">Кто владеет чем</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Orca</h3>
+          <p>Worktree и ветки, терминалы и их раскладка, запуск агентов, mail между агентами,
+            Chat | CLI переключатель, relay на телефон, плагины и темы Orca.</p>
+        </div>
+        <div class="card">
+          <h3>OMP</h3>
+          <p>Модели и роли, MCP-серверы, скиллы, сабагенты (<code>task</code>), approval,
+            системный промпт, LSP, сессии.</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <span class="tag">Проверено</span>
+        У Orca нет CLI-команды <code>mcp</code> и нет своего реестра MCP для OMP. Строки <code>mcpServers</code>
+        в её бандле относятся к импорту настроек Claude, а не к OMP.
+      </div>
+
+      <h2 id="launch">Как Orca запускает OMP</h2>
+      <p>Фактическая командная строка процесса (снята с живой сессии):</p>
+<pre><code>omp --extension ~/.omp/agent/extensions/orca-agent-status.ts \
+    --resume ~/.omp/agent/sessions/&lt;encoded-cwd&gt;/&lt;session&gt;.jsonl</code></pre>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Переменная</th><th>Значение</th><th>Смысл</th></tr></thead>
+          <tbody>
+          <tr><td><code>ORCA_OMP_SOURCE_AGENT_DIR</code></td><td><code>~/.omp/agent</code></td><td>Откуда берётся конфиг при создании управляемого</td></tr>
+          <tr><td><code>ORCA_OMP_STATUS_EXTENSION</code></td><td><code>.../extensions/orca-agent-status.ts</code></td><td>Status-хук: Orca узнаёт working / idle / done</td></tr>
+          <tr><td><code>ORCA_OMP_FRESH_CONFIG</code></td><td><code>.../fresh-session.yml</code></td><td>Overlay для нового терминала: <code>autoResume: false</code></td></tr>
+          <tr><td><code>ORCA_OMP_PREFILL</code></td><td>текст промпта</td><td>Расширение кладёт его в редактор OMP</td></tr>
+          <tr><td><code>ORCA_OMP_CODING_AGENT_DIR</code></td><td>не выставлена</td><td>Опциональный override каталога агента</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <figure class="figure">
+        <svg viewBox="0 0 760 250" role="img" aria-label="Orca запускает OMP, OMP читает глобальный и проектный конфиг">
+          <rect class="svg-accent" x="20" y="20" width="210" height="52" rx="10"></rect>
+          <text class="svg-text" x="125" y="42" text-anchor="middle" font-weight="600">Orca</text>
+          <text class="svg-muted" x="125" y="59" text-anchor="middle">worktree + терминал</text>
+
+          <line class="svg-line" x1="230" y1="46" x2="300" y2="46"></line>
+          <polygon points="308,46 298,41 298,51" fill="var(--muted)"></polygon>
+          <text class="svg-label" x="265" y="10" text-anchor="middle">omp --extension --resume</text>
+
+          <rect class="svg-box" x="310" y="20" width="180" height="52" rx="10"></rect>
+          <text class="svg-text" x="400" y="42" text-anchor="middle" font-weight="600">процесс OMP</text>
+          <text class="svg-muted" x="400" y="59" text-anchor="middle">cwd = worktree</text>
+
+          <line class="svg-line" x1="490" y1="46" x2="560" y2="46"></line>
+          <polygon points="568,46 558,41 558,51" fill="var(--muted)"></polygon>
+
+          <rect class="svg-box" x="570" y="14" width="170" height="64" rx="10"></rect>
+          <text class="svg-muted" x="655" y="34" text-anchor="middle">чтение конфига</text>
+          <text class="svg-text" x="655" y="52" text-anchor="middle" font-size="11">global → project</text>
+          <text class="svg-muted" x="655" y="68" text-anchor="middle">overlay из Orca</text>
+
+          <rect class="svg-node" x="20" y="120" width="230" height="46" rx="8"></rect>
+          <text class="svg-text" x="135" y="140" text-anchor="middle" font-size="11">~/.omp/agent/*</text>
+          <text class="svg-muted" x="135" y="156" text-anchor="middle">config · mcp · skills · agents</text>
+
+          <rect class="svg-node" x="270" y="120" width="230" height="46" rx="8"></rect>
+          <text class="svg-text" x="385" y="140" text-anchor="middle" font-size="11">&lt;worktree&gt;/.omp/*</text>
+          <text class="svg-muted" x="385" y="156" text-anchor="middle">коммитится в репо</text>
+
+          <rect class="svg-node" x="520" y="120" width="220" height="46" rx="8"></rect>
+          <text class="svg-text" x="630" y="140" text-anchor="middle" font-size="11">~/.agents/skills</text>
+          <text class="svg-muted" x="630" y="156" text-anchor="middle">скиллы, установленные Orca</text>
+
+          <text class="svg-label" x="20" y="196">Приоритет: project → global; env и флаги сильнее файлов.</text>
+          <text class="svg-label" x="20" y="214">Проектный конфиг читается только из cwd — без подъёма по родителям.</text>
+        </svg>
+        <figcaption>Orca не хранит настройки OMP: она передаёт путь к расширению, сессию и overlay.</figcaption>
+      </figure>
+
+      <h2 id="placement">Куда что ставить</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Что</th><th>Источник истины</th><th>Путь</th><th>В git?</th></tr></thead>
+          <tbody>
+          <tr><td>MCP, общие для машины</td><td>OMP</td><td><code>~/.omp/agent/mcp.json</code></td><td>нет</td></tr>
+          <tr><td>MCP для репозитория</td><td>OMP</td><td><code>&lt;repo&gt;/.omp/mcp.json</code></td><td>да, без секретов</td></tr>
+          <tr><td>Скиллы Orca</td><td>Orca</td><td><code>~/.agents/skills</code> (+ линки агентам)</td><td>нет</td></tr>
+          <tr><td>Свои скиллы проекта</td><td>OMP</td><td><code>&lt;repo&gt;/.omp/skills/&lt;name&gt;/SKILL.md</code></td><td>да</td></tr>
+          <tr><td>Свои скиллы глобально</td><td>OMP</td><td><code>~/.omp/agent/skills/&lt;name&gt;/SKILL.md</code></td><td>нет</td></tr>
+          <tr><td>Сабагенты проекта</td><td>OMP</td><td><code>&lt;repo&gt;/.omp/agents/*.md</code></td><td>да</td></tr>
+          <tr><td>Настройки проекта</td><td>OMP</td><td><code>&lt;repo&gt;/.omp/config.yml</code></td><td>да</td></tr>
+          <tr><td>Личные настройки</td><td>OMP</td><td><code>~/.omp/agent/config.yml</code></td><td>нет</td></tr>
+          <tr><td>Секреты, API-ключи</td><td>OMP</td><td><code>config.yml</code>, <code>agent.db</code> (0600)</td><td>никогда</td></tr>
+          <tr><td>Keybindings</td><td>OMP</td><td><code>~/.omp/agent/keybindings.yml</code></td><td>нет</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warn">
+        <span class="tag">Права файлов</span>
+        Проверено <code>stat</code> на этой машине: <code>config.yml</code> и <code>agent.db</code> — 0600,
+        <code>history.db</code> — 0644, <code>sessions/</code> — 0775 с файлами 0664. История сессий, заголовки
+        и recap-индекс читаются любым локальным пользователем. Если это нежелательно:
+        <code>chmod 700 ~/.omp/agent ~/.omp/agent/sessions</code> и <code>chmod 600 ~/.omp/agent/history.db*</code>.
+        Файлов <code>.env</code> и <code>secrets.yml</code> здесь нет — это опциональные механизмы,
+        а не хранилище по умолчанию.
+      </div>
+
+      <h2 id="worktree">Следствия работы в worktree</h2>
+      <ol>
+        <li><b>Проектный конфиг — в git.</b> Orca создаёт отдельный checkout на задачу; некоммитнутый <code>.omp/</code> в новую ветку не попадёт.</li>
+        <li><b>Запуск из корня.</b> OMP ищет <code>&lt;cwd&gt;/.omp/config.yml</code> без подъёма по родителям. Skills и <code>AGENTS.md</code> при этом ищутся вверх — асимметрия.</li>
+        <li><b>Массивы заменяются.</b> Проектный <code>disabledProviders</code>, <code>enabledModels</code>, <code>cycleOrder</code>, <code>extensions</code> стирают глобальный список целиком.</li>
+        <li><b>Роли проекта.</b> При <code>modelRoleStorage: project</code> роли пишутся в <code>&lt;repo&gt;/.omp/config.yml</code>; отсутствующие падают на глобальные.</li>
+        <li><b>MCP-процессы.</b> OMP шарит stdio-сервер по <code>command + args + cwd + env</code>. Для независимых от проекта серверов задайте <code>cwd</code> = домашний каталог, иначе процесс на каждый worktree.</li>
+        <li><b>Изоляция дорогая.</b> На ext4 <code>rcopy</code> копирует рабочее дерево; лимит baseline — 1 GiB.</li>
+      </ol>
+
+      <h2 id="skills">Скиллы Orca</h2>
+      <p><code>orca skills install</code> пишет копию в общий <code>~/.agents/skills</code> и линкует в папки
+        обнаруженных агентов. OMP в этой сессии видит оттуда пять скиллов напрямую.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Скилл</th><th>Нужен на Debian?</th><th>Комментарий</th></tr></thead>
+          <tbody>
+          <tr><td><code>orca-cli</code></td><td><span class="badge ok">да</span></td><td>Управление worktree, терминалами, браузером</td></tr>
+          <tr><td><code>orchestration</code></td><td><span class="badge ok">да</span></td><td>Воркеры, DAG, mail, gates</td></tr>
+          <tr><td><code>orca-computer-use</code></td><td><span class="badge ok">да</span></td><td>GUI внешних окон, когда CLI не хватает</td></tr>
+          <tr><td><code>orca-per-workspace-env</code></td><td><span class="badge warn">по нужде</span></td><td>Одноразовые окружения: контейнер, VM, SSH</td></tr>
+          <tr><td><code>orca-plugin-authoring</code></td><td><span class="badge warn">по нужде</span></td><td>Плагины Orca: панели, темы, команды</td></tr>
+          <tr><td><code>orca-jira</code>, <code>orca-linear</code>, <code>jira-tickets</code>, <code>linear-tickets</code></td><td><span class="badge warn">по нужде</span></td><td>Только если трекер реально используется</td></tr>
+          <tr><td><code>orca-emulator</code></td><td><span class="badge bad">нет</span></td><td>iOS Simulator — только macOS</td></tr>
+          <tr><td><code>orca-emulator-android</code></td><td><span class="badge bad">нет</span></td><td>Нужен adb и устройство/AVD</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+<pre><code># что изменится, ничего не записывая
+orca skills install --all --dry-run
+
+# выборочная установка
+orca skills install --skill orca-per-workspace-env --skill orca-plugin-authoring
+
+# что видит сам Orca
+orca skills installed --json</code></pre>
+
+      <div class="callout warn">
+        <span class="tag">Не редактировать</span>
+        Копии Orca-скиллов не править: <code>--force</code> заменит файл, а изменённая копия будет
+        пропускаться при обновлении. Свои скиллы — в <code>.omp/skills</code> или
+        <code>~/.omp/agent/skills</code>.
+      </div>
+
+      <h2 id="next">Что дальше</h2>
+      <p>Следующий раздел — как Orca поднимает несколько OMP и обменивается с ними результатами:
+        <a href="orchestration.html">Оркестрация</a>.</p>
+
+      <nav class="pager" aria-label="Навигация по разделам">
+        <a href="config.html"><span class="dir">Назад</span>← Конфиги</a>
+        <a class="next" href="orchestration.html"><span class="dir">Дальше</span>Оркестрация →</a>
+      </nav>
+    </main>
+  </div>
+</div>
+<script src="assets/wiki.js"></script>
+</body>
+</html>

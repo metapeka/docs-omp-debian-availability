@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Обзор — OMP × Orca</title>
+<meta name="description" content="Вики по настройке OMP на Debian и работе с Orca: MCP, скиллы, агенты, оркестрация.">
+<link rel="stylesheet" href="assets/wiki.css">
+</head>
+<body data-page-title="Обзор">
+<a class="skip" href="#main">К содержимому</a>
+<div class="shell">
+
+  <aside class="sidebar" aria-label="Навигация">
+    <a class="brand" href="index.html"><span class="dot"></span> OMP × Orca</a>
+    <p class="brand-sub">Настройка · ноябрь 2026</p>
+
+    <div class="search">
+      <input id="searchInput" type="search" placeholder="Поиск (Ctrl+K)" aria-label="Поиск по вики" autocomplete="off">
+      <div class="search-results" id="searchResults" role="listbox"></div>
+    </div>
+
+    <p class="nav-group-title">Разделы</p>
+    <ul class="nav-list">
+      <li><a href="index.html"><span class="num">0</span>Обзор</a></li>
+      <li><a href="setup.html"><span class="num">1</span>Настройка</a></li>
+      <li><a href="config.html"><span class="num">2</span>Конфиги</a></li>
+      <li><a href="orca.html"><span class="num">3</span>Orca и OMP</a></li>
+      <li><a href="orchestration.html"><span class="num">4</span>Оркестрация</a></li>
+      <li><a href="sources.html"><span class="num">5</span>Источники</a></li>
+    </ul>
+
+    <p class="nav-group-title">На этой странице</p>
+    <ul class="toc" id="toc"></ul>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn sidebar-toggle" id="navToggle" type="button" aria-label="Открыть меню">☰</button>
+      <div class="crumbs">Вики / <b id="crumbTitle">Обзор</b></div>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeBtn" type="button">◐ Авто</button>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+      <div class="page-head">
+        <p class="eyebrow">Рабочие заметки</p>
+        <h1>OMP × Orca на Debian</h1>
+        <p class="lead">Как устроена связка, где лежат MCP и скиллы, как Orca запускает и оркестрирует OMP.
+          Всё проверено на этой машине: Debian 13, OMP 19.1.0, Orca 1.4.268.</p>
+      </div>
+
+      <div class="callout ok">
+        <span class="tag">Статус</span>
+        Это <b>план</b>, а не применённая конфигурация. В <code>~/.omp/agent/config.yml</code> ничего не менялось.
+        Чек-лист в разделе «Настройка» — <span id="globalProgress">пока пусто</span>.
+      </div>
+
+      <h2 id="facts">Факты, которые меняют план</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Approval по умолчанию — <code>yolo</code></h3>
+          <p>Авто-одобряется всё, включая <code>exec</code>. Критичные паттерны в yolo игнорируются.
+            Проверено: <code>omp config get tools.approvalMode</code>.</p>
+        </div>
+        <div class="card">
+          <h3>Sandbox отсутствует by design</h3>
+          <p>Approval решает, <i>когда спрашивать</i>, но не ограничивает доступ. Ответ мейнтейнера в GH #18407.</p>
+        </div>
+        <div class="card">
+          <h3>Корень — ext4</h3>
+          <p>Ни reflink, ни btrfs. Изоляция сабагентов деградирует до <code>rcopy</code> — полной копии.</p>
+        </div>
+        <div class="card">
+          <h3>Реестр скиллов пуст</h3>
+          <p><code>skills.omp.sh</code> отдаёт 0 пакетов. Скиллы — только свои или те, что ставит Orca.</p>
+        </div>
+        <div class="card">
+          <h3>Orca — лаунчер, не конфиг</h3>
+          <p>Она запускает <code>omp</code> в терминале worktree. MCP-реестра у неё нет.</p>
+        </div>
+        <div class="card">
+          <h3><code>smol</code> наследует <code>default</code></h3>
+          <p>Без явного дешёвого <code>smol</code> «дешёвый воркер» работает на дорогой модели.</p>
+        </div>
+      </div>
+
+      <h2 id="start">С чего начать</h2>
+      <div class="grid three">
+        <div class="card">
+          <p class="kpi">1</p>
+          <h3>Безопасность</h3>
+          <p>Сменить <code>approvalMode</code> на <code>write</code>, добавить <code>restrictedFolders</code>.
+            Остальное подождёт.</p>
+          <p><a href="setup.html#phase-1">Фаза 1 →</a></p>
+        </div>
+        <div class="card">
+          <p class="kpi">2</p>
+          <h3>Понять слои</h3>
+          <p>Что принадлежит Orca, что OMP, и почему проектный конфиг надо коммитить.</p>
+          <p><a href="orca.html">Orca и OMP →</a></p>
+        </div>
+        <div class="card">
+          <p class="kpi">3</p>
+          <h3>Оркестрация</h3>
+          <p>Три уровня: worktree, supervised worker, OMP-сабагент. Не смешивать.</p>
+          <p><a href="orchestration.html">Оркестрация →</a></p>
+        </div>
+      </div>
+
+      <h2 id="map">Карта вики</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Раздел</th><th>Что внутри</th><th></th></tr></thead>
+          <tbody>
+          <tr><td><a href="setup.html">Настройка</a></td><td>Чек-лист из 9 фаз с отметками и прогрессом</td><td><span class="badge">практика</span></td></tr>
+          <tr><td><a href="config.html">Конфиги</a></td><td><code>config.yml</code>, <code>mcp.json</code>, таблица ключей, антипаттерны</td><td><span class="badge">copy-paste</span></td></tr>
+          <tr><td><a href="orca.html">Orca и OMP</a></td><td>Запуск, окружение, размещение MCP/скиллов, worktree</td><td><span class="badge info">архитектура</span></td></tr>
+          <tr><td><a href="orchestration.html">Оркестрация</a></td><td>Run → Task → Dispatch, handoff, сообщения, ловушки</td><td><span class="badge info">архитектура</span></td></tr>
+          <tr><td><a href="sources.html">Источники</a></td><td>Ссылки, даты, что проверено, а что нет</td><td><span class="badge warn">честность</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="layers">Три слоя в одном взгляде</h2>
+      <figure class="figure">
+        <svg viewBox="0 0 760 210" role="img" aria-label="Три слоя: Orca, OMP, файлы конфигурации">
+          <rect class="svg-accent" x="70" y="8" width="620" height="52" rx="10"></rect>
+          <text class="svg-text" x="380" y="31" text-anchor="middle" font-weight="600">Orca</text>
+          <text class="svg-muted" x="380" y="48" text-anchor="middle">worktrees · терминалы · запуск агентов · сообщения</text>
+
+          <line class="svg-line" x1="380" y1="60" x2="380" y2="80"></line>
+          <polygon points="380,88 375,78 385,78" fill="var(--muted)"></polygon>
+
+          <rect class="svg-box" x="70" y="90" width="620" height="52" rx="10"></rect>
+          <text class="svg-text" x="380" y="113" text-anchor="middle" font-weight="600">OMP</text>
+          <text class="svg-muted" x="380" y="130" text-anchor="middle">модели и роли · MCP · скиллы · task-сабагенты · approval</text>
+
+          <line class="svg-line" x1="380" y1="142" x2="380" y2="162"></line>
+          <polygon points="380,170 375,160 385,160" fill="var(--muted)"></polygon>
+
+          <rect class="svg-box" x="70" y="172" width="620" height="34" rx="8"></rect>
+          <text class="svg-muted" x="380" y="194" text-anchor="middle">~/.omp/agent/*  ·  &lt;repo&gt;/.omp/*  ·  ~/.agents/skills</text>
+        </svg>
+        <figcaption>Orca управляет процессами и рабочими деревьями; конфигурация целиком принадлежит OMP.</figcaption>
+      </figure>
+
+      <nav class="pager" aria-label="Навигация по разделам">
+        <span></span>
+        <a class="next" href="setup.html"><span class="dir">Дальше</span>Настройка →</a>
+      </nav>
+    </main>
+  </div>
+</div>
+<script src="assets/wiki.js"></script>
+</body>
+</html>

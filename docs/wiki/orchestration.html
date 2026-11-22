@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Оркестрация — OMP × Orca</title>
+<link rel="stylesheet" href="assets/wiki.css">
+</head>
+<body data-page-title="Оркестрация">
+<a class="skip" href="#main">К содержимому</a>
+<div class="shell">
+
+  <aside class="sidebar" aria-label="Навигация">
+    <a class="brand" href="index.html"><span class="dot"></span> OMP × Orca</a>
+    <p class="brand-sub">Настройка · ноябрь 2026</p>
+
+    <div class="search">
+      <input id="searchInput" type="search" placeholder="Поиск (Ctrl+K)" aria-label="Поиск по вики" autocomplete="off">
+      <div class="search-results" id="searchResults" role="listbox"></div>
+    </div>
+
+    <p class="nav-group-title">Разделы</p>
+    <ul class="nav-list">
+      <li><a href="index.html"><span class="num">0</span>Обзор</a></li>
+      <li><a href="setup.html"><span class="num">1</span>Настройка</a></li>
+      <li><a href="config.html"><span class="num">2</span>Конфиги</a></li>
+      <li><a href="orca.html"><span class="num">3</span>Orca и OMP</a></li>
+      <li><a href="orchestration.html"><span class="num">4</span>Оркестрация</a></li>
+      <li><a href="sources.html"><span class="num">5</span>Источники</a></li>
+    </ul>
+
+    <p class="nav-group-title">На этой странице</p>
+    <ul class="toc" id="toc"></ul>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn sidebar-toggle" id="navToggle" type="button" aria-label="Открыть меню">☰</button>
+      <div class="crumbs">Вики / <b id="crumbTitle">Оркестрация</b></div>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeBtn" type="button">◐ Авто</button>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+      <div class="page-head">
+        <p class="eyebrow">Раздел 4</p>
+        <h1>Оркестрация: Orca и OMP</h1>
+        <p class="lead">Orca не «крутит OMP внутри себя». Она поднимает отдельные процессы OMP в отдельных
+          worktree и связывает их сообщениями. Внутри одного процесса живёт только OMP-слой сабагентов.</p>
+      </div>
+
+      <div class="callout">
+        <span class="tag">Терминология</span>
+        <b>Run</b> — namespace и домашний inbox. <b>Task</b> — единица работы. <b>Dispatch</b> — конкретный
+        запуск задачи у воркера. <b>Worker</b> — агент в своём worktree. Всё это живёт в Orca, а не в OMP.
+      </div>
+
+      <h2 id="levels">Три уровня</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Уровень</th><th>Единица</th><th>Кто создаёт</th><th>Изоляция</th></tr></thead>
+          <tbody>
+          <tr><td>Workspace / worktree</td><td>git-checkout + ветка + терминалы</td><td><code>orca worktree create</code></td><td>свой каталог, свой OMP</td></tr>
+          <tr><td>Supervised worker</td><td>Run → Task → Dispatch → терминал агента</td><td><code>orca orchestration worker-start</code></td><td>свой worktree + отдельный процесс</td></tr>
+          <tr><td>OMP-сабагент</td><td><code>task</code>-вызов внутри сессии</td><td>сам OMP</td><td>общий процесс, общий checkout</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <figure class="figure">
+        <svg viewBox="0 0 760 290" role="img" aria-label="Координатор запускает Run, Task, Dispatch и воркеров">
+          <rect class="svg-accent" x="20" y="18" width="220" height="56" rx="10"></rect>
+          <text class="svg-text" x="130" y="41" text-anchor="middle" font-weight="600">Координатор</text>
+          <text class="svg-muted" x="130" y="58" text-anchor="middle">OMP в своём worktree</text>
+
+          <line class="svg-line" x1="240" y1="46" x2="300" y2="46"></line>
+          <polygon points="308,46 298,41 298,51" fill="var(--muted)"></polygon>
+          <text class="svg-label" x="270" y="8" text-anchor="middle">worker-start</text>
+
+          <rect class="svg-box" x="310" y="18" width="120" height="56" rx="10"></rect>
+          <text class="svg-text" x="370" y="41" text-anchor="middle" font-weight="600">Run</text>
+          <text class="svg-muted" x="370" y="58" text-anchor="middle">inbox</text>
+
+          <line class="svg-line" x1="430" y1="46" x2="480" y2="46"></line>
+          <polygon points="488,46 478,41 478,51" fill="var(--muted)"></polygon>
+
+          <rect class="svg-box" x="490" y="18" width="110" height="56" rx="10"></rect>
+          <text class="svg-text" x="545" y="41" text-anchor="middle" font-weight="600">Task</text>
+          <text class="svg-muted" x="545" y="58" text-anchor="middle">spec + deps</text>
+
+          <line class="svg-line" x1="600" y1="46" x2="640" y2="46"></line>
+          <polygon points="648,46 638,41 638,51" fill="var(--muted)"></polygon>
+
+          <rect class="svg-box" x="650" y="18" width="90" height="56" rx="10"></rect>
+          <text class="svg-text" x="695" y="41" text-anchor="middle" font-weight="600">Dispatch</text>
+          <text class="svg-muted" x="695" y="58" text-anchor="middle">запуск</text>
+
+          <line class="svg-line" x1="695" y1="74" x2="695" y2="100"></line>
+          <line class="svg-line" x1="150" y1="100" x2="695" y2="100"></line>
+
+          <line class="svg-line" x1="150" y1="100" x2="150" y2="120"></line>
+          <line class="svg-line" x1="400" y1="100" x2="400" y2="120"></line>
+          <line class="svg-line" x1="695" y1="100" x2="695" y2="120"></line>
+
+          <rect class="svg-node" x="60" y="120" width="180" height="62" rx="8"></rect>
+          <text class="svg-text" x="150" y="143" text-anchor="middle" font-size="11">worktree A</text>
+          <text class="svg-muted" x="150" y="160" text-anchor="middle">omp</text>
+          <text class="svg-muted" x="150" y="174" text-anchor="middle">agent: omp</text>
+
+          <rect class="svg-node" x="310" y="120" width="180" height="62" rx="8"></rect>
+          <text class="svg-text" x="400" y="143" text-anchor="middle" font-size="11">worktree B</text>
+          <text class="svg-muted" x="400" y="160" text-anchor="middle">codex</text>
+          <text class="svg-muted" x="400" y="174" text-anchor="middle">agent: codex</text>
+
+          <rect class="svg-node" x="605" y="120" width="135" height="62" rx="8"></rect>
+          <text class="svg-text" x="672" y="143" text-anchor="middle" font-size="11">worktree C</text>
+          <text class="svg-muted" x="672" y="160" text-anchor="middle">omp</text>
+          <text class="svg-muted" x="672" y="174" text-anchor="middle">keep-open</text>
+
+          <path class="svg-line-accent" d="M 60 205 C 20 205, 20 90, 60 52"></path>
+          <polygon points="68,50 58,45 60,56" fill="var(--accent)"></polygon>
+          <text class="svg-label" x="20" y="228">worker_done · question · escalation</text>
+
+          <path class="svg-line" d="M 150 240 C 150 262, 400 262, 400 190"></path>
+          <polygon points="400,182 395,192 405,192" fill="var(--muted)"></polygon>
+          <text class="svg-label" x="170" y="276">orchestration send → check / reply</text>
+        </svg>
+        <figcaption>Координатор живёт, воркеры работают в своих worktree; обмен — через mail, не через ввод в терминал.</figcaption>
+      </figure>
+
+      <h2 id="spawn">Что происходит при спавне</h2>
+      <p><code>orca worktree create --agent omp</code> делает новый checkout от базовой ветки, запускает
+        <code>omp</code> в терминале этого каталога и передаёт промпт. Для нового запуска промпт идёт через
+        launch journal, а расширение <code>orca-prefill.ts</code> кладёт его в редактор OMP через
+        <code>ORCA_OMP_PREFILL</code>. В чат-режиме сообщение приходит целиком.</p>
+
+      <h3>Handoff — отдал и забыл</h3>
+<pre><code>orca worktree create --name fix-race --agent omp \
+  --surface terminal --prompt "$(cat brief.md)" --json</code></pre>
+      <p class="small muted">Результат не ждётся, исходный агент останавливается. Для «просто сделай в другой ветке».</p>
+
+      <h3>Supervised worker — ждём результат</h3>
+<pre><code>orca orchestration run-create --objective "починить гонку в keygate" --json
+orca orchestration task-create --spec-file brief.md --task-title fix-race --json
+orca orchestration worker-start --environment local \
+  --spec-file brief.md --worktree new-child --name fix-race \
+  --agent omp --model "@slow" --json
+# закончить ход; Orca разбудит на worker_done / question / escalation</code></pre>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th><code>--worktree</code></th><th>Что будет</th><th>Когда</th></tr></thead>
+          <tbody>
+          <tr><td><code>current</code></td><td>Работа в вашем checkout</td><td>Только read-only или уверены, что файлы не пересекутся</td></tr>
+          <tr><td><code>new-child</code></td><td>Вложенный worktree под вашим</td><td>Обычный параллельный фикс</td></tr>
+          <tr><td><code>new-top-level</code></td><td>Независимый worktree от репозитория</td><td>Отдельная задача, не связанная с вашей веткой</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <span class="tag">Spec</span>
+        Задача должна быть самодостаточной: цель, изменение, ограничения, что можно править, чем доказано
+        «готово». Отдельно укажите, означает ли ненулевой exit провал или это и есть результат.
+      </div>
+
+      <h2 id="messages">Обмен сообщениями</h2>
+      <p>Тело сообщения <b>не печатается</b> в терминал воркера. Orca будит его служебной заметкой,
+        а воркер сам забирает почту командой <code>check</code>.</p>
+<pre><code># координатор
+orca orchestration send --to dispatch:&lt;id&gt; --subject "уточнение" --body-file msg.md --json
+
+# воркер
+orca orchestration check                       # FIFO-батч, помечает прочитанным
+orca orchestration check --wait --timeout-ms 300000
+orca orchestration check --peek --format       # посмотреть, не забирая
+
+# ответ на вопрос
+orca orchestration reply --id &lt;message_id&gt; --body "ответ"</code></pre>
+
+      <ul>
+        <li>Доставка ровно один раз: при потере ответа переиспользуйте <code>operationId</code> / <code>--retry-request</code>, а не новый запуск.</li>
+        <li><code>worker_done</code> закрывает Task; провал никогда не помечается выполненным.</li>
+        <li><code>escalation</code> с <code>stopReason</code> значит, что воркер остановился без отчёта — стеерить, перезапускать или сказать пользователю.</li>
+        <li><code>exited</code>/<code>lost</code> — процесс исчез.</li>
+      </ul>
+
+      <h2 id="observe">Наблюдение</h2>
+<pre><code>orca agent list --json                 # чаты и терминалы, состояние
+orca agent read &lt;id&gt; --json            # транскрипт, не экран
+orca terminal read --terminal &lt;h&gt; --screen --json
+orca terminal wait --terminal &lt;h&gt; --for tui-idle --timeout-ms 300000
+orca orchestration worker-list --json
+orca orchestration inbox --terminal run:&lt;run_id&gt; --limit 50</code></pre>
+      <p><code>tui-idle</code> работает для OMP потому, что в сессию подключается
+        <code>orca-agent-status.ts</code> через <code>--extension</code>. Без отчётов статуса Orca не знает,
+        свободен ли агент, и держит почту неотданной.</p>
+
+      <h2 id="choose">Когда что использовать</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ситуация</th><th>Инструмент</th></tr></thead>
+          <tbody>
+          <tr><td>Параллельные ветки и фиксы в разных worktree</td><td>Orca workers</td></tr>
+          <tr><td>Нужен другой агент (Codex / Claude / Pi) или другая машина</td><td>Orca workers</td></tr>
+          <tr><td>Долгая задача, результат позже, нужен relay на телефон</td><td>Orca + relay</td></tr>
+          <tr><td>Разведка по репозиторию, пять read-only скаутов</td><td>OMP <code>task</code></td></tr>
+          <tr><td>Параллельные правки в одном репо с изоляцией</td><td>OMP <code>task</code> + <code>isolated: true</code></td></tr>
+          <tr><td>Один связный рефакторинг</td><td>Одна сессия, без фан-аута</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Двойная оркестрация (Orca-воркер, который сам спавнит шесть OMP-сабагентов) законна, но дорога:
+        каждый уровень умножает расход и усложняет атрибуцию ошибок.</p>
+
+      <h2 id="pitfalls">Подводные камни</h2>
+      <ul>
+        <li><b>Не поллить.</b> Скрипт с <code>check</code> съедает почту, и Orca нечем будить координатора. Завершили ход — Orca разбудит.</li>
+        <li>Спящий терминал нельзя адресовать: сначала откройте его workspace.</li>
+        <li>Почта в живой терминал не durable: закрылся терминал — сообщение потеряно.</li>
+        <li><code>terminal send</code> для общения с агентом запрещён: только <code>orchestration send</code>.</li>
+        <li>Стартуйте ~4 воркера одновременно, остальные — по мере возврата.</li>
+        <li><code>worker-start</code> не проверяет, установлен ли CLI: отсутствующий бинарь вылезет как <code>agent_readiness</code> timeout.</li>
+        <li>Авторетраев нет. «Тишина» не доказывает, что процесс остановлен.</li>
+        <li>Если OMP показывает меню доверия или разрешений, промпт с Enter будет отклонён (<code>agent_prompt_blocked</code>): меню должен закрыть человек.</li>
+        <li>OMP практичнее держать в <code>--surface terminal</code>; чат — только если агент и хост это поддерживают.</li>
+      </ul>
+
+      <h2 id="omp-specific">Специфика OMP</h2>
+      <ul>
+        <li><code>--model</code> принимает не только <code>provider/id</code>, но и роли OMP: <code>@slow</code>, <code>@smol</code>.</li>
+        <li><code>--effort</code> маппится на thinking OMP; требует <code>--model</code>.</li>
+        <li>Статус и prefill приходят от двух расширений Orca в <code>~/.omp/agent/extensions/</code>; не удалять их.</li>
+        <li><code>orca agent installed</code> на этой машине: <code>pi</code> (default), <code>omp</code>, <code>cline</code>, <code>dsh</code>.</li>
+        <li>Чтобы воркер не потерял конфиг, проектные <code>.omp/</code> файлы должны быть в ветке, от которой создаётся worktree.</li>
+      </ul>
+
+      <nav class="pager" aria-label="Навигация по разделам">
+        <a href="orca.html"><span class="dir">Назад</span>← Orca и OMP</a>
+        <a class="next" href="sources.html"><span class="dir">Дальше</span>Источники →</a>
+      </nav>
+    </main>
+  </div>
+</div>
+<script src="assets/wiki.js"></script>
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Настройка — OMP × Orca</title>
+<link rel="stylesheet" href="assets/wiki.css">
+</head>
+<body data-page-title="Настройка">
+<a class="skip" href="#main">К содержимому</a>
+<div class="shell">
+
+  <aside class="sidebar" aria-label="Навигация">
+    <a class="brand" href="index.html"><span class="dot"></span> OMP × Orca</a>
+    <p class="brand-sub">Настройка · ноябрь 2026</p>
+
+    <div class="search">
+      <input id="searchInput" type="search" placeholder="Поиск (Ctrl+K)" aria-label="Поиск по вики" autocomplete="off">
+      <div class="search-results" id="searchResults" role="listbox"></div>
+    </div>
+
+    <p class="nav-group-title">Разделы</p>
+    <ul class="nav-list">
+      <li><a href="index.html"><span class="num">0</span>Обзор</a></li>
+      <li><a href="setup.html"><span class="num">1</span>Настройка</a></li>
+      <li><a href="config.html"><span class="num">2</span>Конфиги</a></li>
+      <li><a href="orca.html"><span class="num">3</span>Orca и OMP</a></li>
+      <li><a href="orchestration.html"><span class="num">4</span>Оркестрация</a></li>
+      <li><a href="sources.html"><span class="num">5</span>Источники</a></li>
+    </ul>
+
+    <p class="nav-group-title">На этой странице</p>
+    <ul class="toc" id="toc"></ul>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn sidebar-toggle" id="navToggle" type="button" aria-label="Открыть меню">☰</button>
+      <div class="crumbs">Вики / <b id="crumbTitle">Настройка</b></div>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeBtn" type="button">◐ Авто</button>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+      <div class="page-head">
+        <p class="eyebrow">Раздел 1</p>
+        <h1>Чек-лист настройки</h1>
+        <p class="lead">Девять фаз, от бэкапа до проверки. Отметки сохраняются в браузере,
+          так что можно закрыть вкладку и вернуться.</p>
+      </div>
+
+      <div class="progress-wrap" id="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-row">
+          <span class="progress-num" id="progressNum">0 / 0</span>
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+          <button class="icon-btn" id="resetTasks" type="button">сбросить</button>
+        </div>
+      </div>
+
+      <!-- ФАЗА 0 -->
+      <section class="phase" id="phase-0">
+        <div class="phase-head"><h3>Фаза 0 — база</h3><span class="phase-count"></span></div>
+        <ul class="tasks">
+          <li><label class="task"><input type="checkbox" data-task="p0-backup"><span class="body">
+            Бэкап конфига <code>cp ~/.omp/agent/config.yml{,.bak-$(date +%F)}</code>
+            <span class="why">Правки YAML необратимы без копии.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p0-path"><span class="body">
+            Проверить <code>omp config path</code> → <code>~/.omp/agent</code>
+            <span class="why">Если путь другой — активен профиль или <code>PI_CODING_AGENT_DIR</code>.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p0-version"><span class="body">
+            <code>omp --version</code> ≥ 19.1.0, <code>orca --version</code> 1.4.x
+            <span class="why">Ключи из этого чек-листа сверены с 19.1.0.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p0-cwd"><span class="body">
+            Запускать сессии из корня проекта
+            <span class="why">Проектный <code>.omp/config.yml</code> ищется только в cwd, без подъёма по родителям.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p0-profile"><span class="body">
+            Для чужих репо — отдельный профиль: <code>omp --profile untrusted --alias omp-u</code>
+            <span class="why">Изолирует auth, сессии, конфиг и MCP.</span></span></label></li>
+        </ul>
+      </section>
+
+      <!-- ФАЗА 1 -->
+      <section class="phase" id="phase-1">
+        <div class="phase-head"><h3>Фаза 1 — безопасность</h3><span class="phase-count"></span></div>
+        <div class="callout danger">
+          <span class="tag">Сейчас</span>
+          <code>approvalMode</code> = <code>yolo</code>. Это не «спросит перед опасным»: авто-одобряется всё,
+          включая shell. Sandbox при этом нет.
+        </div>
+        <ul class="tasks">
+          <li><label class="task"><input type="checkbox" data-task="p1-mode"><span class="body">
+            <code>tools.approvalMode: write</code>
+            <span class="why">Спрашивает только <code>exec</code>; чтение и запись файлов без трения.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p1-restricted"><span class="body">
+            <code>tools.restrictedFolders</code>: <code>~/.ssh</code>, <code>~/.gnupg</code>, <code>~/.aws</code>, <code>~/.kube</code>, <code>~/.config/gh</code>, <code>~/.password-store</code>, <code>~/secrets</code>
+            <span class="why">Спрашивает всегда, даже в yolo. Но <code>bash</code> матчится по cwd, а не по тексту команды.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p1-patterns"><span class="body">
+            <code>bash.patterns</code>: точечные <code>deny</code>/<code>prompt</code> на <code>sudo</code>, <code>systemctl</code>, <code>git push --force</code>, <code>rm -rf /</code>, <code>dd of=/dev/*</code>, <code>mkfs</code>, <code>curl | sh</code>
+            <span class="why">Правила проверяют сегменты <code>&amp;&amp;</code>/<code>;</code>/<code>|</code>, но не покрывают <code>eval</code>.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p1-no-blanket"><span class="body">
+            НЕ ставить <code>tools.approval.bash: prompt</code> или <code>eval: prompt</code> глобально
+            <span class="why">Сабагенты headless: любой <code>prompt</code> у них = отказ, а не вопрос.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p1-secrets"><span class="body">
+            <code>secrets.enabled: true</code>
+            <span class="why">Редакция ключей в промпте. Не спасает от <code>env | grep</code> внутри bash.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p1-perms"><span class="body">
+            Проверить права: <code>stat -c '%a %n' ~/.omp/agent/{config.yml,agent.db,history.db}</code>
+            <span class="why">На этой машине config.yml и agent.db — 600, history.db — 644: история сессий читается локальными пользователями. Лечится <code>chmod 700 ~/.omp/agent</code> и <code>chmod 600 ~/.omp/agent/history.db*</code>.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p1-web"><span class="body">
+            <code>providers.webKeyless: false</code>
+            <span class="why">Иначе web_search уходит через keyless Parallel (тред r/PiCodingAgent, 2026-11-17).</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p1-mcp-project"><span class="body">
+            Решить про <code>mcp.enableProjectConfig</code>
+            <span class="why">Проектный <code>mcp.json</code> — исполняемый код. Для недоверенных чекаутов выключить.</span></span></label></li>
+        </ul>
+      </section>
+
+      <!-- ФАЗА 2 -->
+      <section class="phase" id="phase-2">
+        <div class="phase-head"><h3>Фаза 2 — UX и терминал</h3><span class="phase-count"></span></div>
+        <ul class="tasks">
+          <li><label class="task"><input type="checkbox" data-task="p2-tokens"><span class="body">
+            <code>display.showTokenUsage: true</code>
+            <span class="why">Видно расход на каждом ходе — полезно при нескольких агентах.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p2-predictions"><span class="body">
+            <code>composer.predictions: false</code>
+            <span class="why">Минус один запрос модели на каждый ход.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p2-mouse"><span class="body">
+            <code>tui.mouse</code> оставить <code>false</code>, <code>tui.maxFps: 30</code>
+            <span class="why">С включённой мышью колесо перестаёт скроллить транскрипт.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p2-kitty"><span class="body">
+            <code>terminal.showImages: true</code>, <code>tui.textSizing: true</code>
+            <span class="why">Kitty: OSC 66 и инлайн-картинки. В остальных терминалах выключить.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p2-keys"><span class="body">
+            Keybindings — только в <code>~/.omp/agent/keybindings.yml</code>
+            <span class="why">В <code>config.yml</code> этот ключ не читается вообще.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p2-editor"><span class="body">
+            Задать <code>EDITOR</code>, поставить <code>wl-clipboard</code>
+            <span class="why">Ctrl+G и вставка картинок на Wayland (GH #7316).</span></span></label></li>
+        </ul>
+      </section>
+
+      <!-- ФАЗА 3 -->
+      <section class="phase" id="phase-3">
+        <div class="phase-head"><h3>Фаза 3 — модели и роли</h3><span class="phase-count"></span></div>
+        <ul class="tasks">
+          <li><label class="task"><input type="checkbox" data-task="p3-roles"><span class="body">
+            <code>/model → Roles</code>: задать <code>default</code>, <code>smol</code>, <code>slow</code>, <code>task</code>, <code>commit</code>, <code>tiny</code>
+            <span class="why">Незаданные <code>smol</code>/<code>slow</code> наследуют <code>default</code>.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p3-models"><span class="body">
+            Сверить доступные модели: <code>omp models --kind chat</code>
+            <span class="why">Селекторы в конфиге должны существовать у провайдера.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p3-judge"><span class="body">
+            Проверить нативный <code>judge</code>
+            <span class="why">Без него <code>prewalk.auto</code> и <code>task.autoParallel</code> молча не работают.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p3-fallback"><span class="body">
+            <code>retry.fallbackChains</code> для <code>default</code>, <code>smol</code>, <code>task</code>
+            <span class="why">Переживает rate limit без ручного переключения.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p3-compaction"><span class="body">
+            Compaction оставить дефолтной
+            <span class="why"><code>keepRecentTokens: 20000</code>, <code>methodOrder</code> уже разумны.</span></span></label></li>
+        </ul>
+      </section>
+
+      <!-- ФАЗА 4 -->
+      <section class="phase" id="phase-4">
+        <div class="phase-head"><h3>Фаза 4 — MCP</h3><span class="phase-count"></span></div>
+        <ul class="tasks">
+          <li><label class="task"><input type="checkbox" data-task="p4-none"><span class="body">
+            Не ставить <code>filesystem</code>, <code>fetch</code>, <code>sqlite</code>, <code>memory</code>, <code>sequential-thinking</code>, <code>playwright</code>
+            <span class="why">Закрыты нативно; браузерные ещё и молча выбрасываются.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p4-archived"><span class="body">
+            Не ставить архивированные <code>server-postgres|sqlite|puppeteer|github</code>
+            <span class="why">Репозиторий <code>servers-archived</code>, npm-метка «unmaintained».</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p4-pick"><span class="body">
+            Выбрать 2–4 сервера: <code>context7</code> (HTTP), <code>postgres-mcp</code> (uvx), при нужде <code>sentry</code>
+            <span class="why">Node ≥24 серверы не запустятся на Node 22 без обновления.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p4-cwd"><span class="body">
+            Для проектно-независимых серверов — <code>cwd</code> = домашний каталог
+            <span class="why">Один общий процесс на все worktree вместо процесса на проект.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p4-timeout"><span class="body">
+            <code>mcp.startupTimeoutMs: 1000</code>
+            <span class="why">Холодный npx/uvx не успевает за дефолтные 250 мс.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p4-verify"><span class="body">
+            Проверить <code>/mcp list</code>, <code>/mcp test &lt;name&gt;</code>
+            <span class="why">Видно, из какого файла взят сервер и почему не подключился.</span></span></label></li>
+        </ul>
+      </section>
+
+      <!-- ФАЗА 5 -->
+      <section class="phase" id="phase-5">
+        <div class="phase-head"><h3>Фаза 5 — агенты</h3><span class="phase-count"></span></div>
+        <ul class="tasks">
+          <li><label class="task"><input type="checkbox" data-task="p5-concurrency"><span class="body">
+            <code>task.maxConcurrency: 6</code> (8 ядер), <code>workerThreads: 0</code>
+            <span class="why">Воркеры включаются только при ≥9 одновременных сабагентах.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p5-budget"><span class="body">
+            <code>task.softRequestBudget: 150</code>, <code>showResolvedModelBadge: true</code>
+            <span class="why">Видно фактическую модель каждого сабагента.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p5-isolation"><span class="body">
+            <code>isolation.backend: rcopy</code>, <code>task.isolation.enabled: true</code>
+            <span class="why">ext4: reflink/btrfs недоступны; изоляция = копия.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p5-worktree"><span class="body">
+            <code>worktree.clone: false</code>
+            <span class="why">На ext4 «CoW-клон» — это полная копия, не экономия.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p5-agents"><span class="body">
+            Свои агенты — <code>.omp/agents/*.md</code> в репо
+            <span class="why">Коммитить: иначе каждый worktree Orca стартует без них.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p5-advisor"><span class="body">
+            <code>advisor.enabled: false</code> пока
+            <span class="why">Позже — <code>reviewMode: agent-end</code> и дешёвая модель.</span></span></label></li>
+        </ul>
+      </section>
+
+      <!-- ФАЗА 6 -->
+      <section class="phase" id="phase-6">
+        <div class="phase-head"><h3>Фаза 6 — скиллы и плагины</h3><span class="phase-count"></span></div>
+        <ul class="tasks">
+          <li><label class="task"><input type="checkbox" data-task="p6-orca-dry"><span class="body">
+            <code>orca skills install --all --dry-run</code> → затем выборочно
+            <span class="why">На Debian <code>--all</code> тянет emulator-скиллы, бесполезные без macOS/adb.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p6-own"><span class="body">
+            Свои скиллы — <code>.omp/skills/&lt;name&gt;/SKILL.md</code> (ровно один уровень)
+            <span class="why">Коммитить → наследуются всеми worktree.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p6-list"><span class="body">
+            Проверить <code>omp skill list . --json</code>
+            <span class="why">Показывает warnings и видимость скилла в этой сессии.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p6-plugins"><span class="body">
+            Плагины — только при необходимости
+            <span class="why">Плагин = контейнер: skills, commands, agents, hooks, MCP, код.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p6-hooks"><span class="body">
+            Hooks — второй слой, не песочница
+            <span class="why"><code>tool_call</code> fail-closed, но <code>eval</code> обходит bash-проверки.</span></span></label></li>
+        </ul>
+      </section>
+
+      <!-- ФАЗА 7 -->
+      <section class="phase" id="phase-7">
+        <div class="phase-head"><h3>Фаза 7 — LSP и шелл</h3><span class="phase-count"></span></div>
+        <ul class="tasks">
+          <li><label class="task"><input type="checkbox" data-task="p7-apt"><span class="body">
+            <code>apt install clangd gopls rust-analyzer python3-pylsp fuse-overlayfs</code>
+            <span class="why">Всё есть в trixie; pylsp тянет зависимости из apt.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p7-npm"><span class="body">
+            <code>npm i -g typescript typescript-language-server pyright bash-language-server yaml-language-server</code>
+            <span class="why">Node 22.23 уже стоит через NodeSource.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p7-lsp"><span class="body">
+            <code>lsp.formatOnWrite: false</code>, <code>lazy: true</code>, <code>shared: true</code>
+            <span class="why">Иначе каждый write переформатирует файл целиком.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p7-lsp-off"><span class="body">
+            Помнить: <code>lsp.enabled: false</code> не отключает LSP из <code>write</code>/<code>edit</code>
+            <span class="why">Полное отключение — только <code>--no-lsp</code> (GH #18205).</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p7-direnv"><span class="body">
+            <code>bash.direnv: auto</code>, <code>bash.gitGuard: true</code>
+            <span class="why">gitGuard полезен, когда несколько агентов в одном checkout.</span></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p7-worktree"><span class="body">
+            Периодически <code>omp worktree clear</code>
+            <span class="why">Утечка <code>~/.omp/wt/*</code> при SIGHUP (GH #18519).</span></span></label></li>
+        </ul>
+      </section>
+
+      <!-- ФАЗА 8 -->
+      <section class="phase" id="phase-8">
+        <div class="phase-head"><h3>Фаза 8 — проверка</h3><span class="phase-count"></span></div>
+        <p class="muted small">Прогнать в новой сессии OMP, не в этой.</p>
+<pre><code>omp config get tools.approvalMode
+omp config get isolation.backend
+omp models --kind chat | head
+omp skill list . --json
+orca skills installed --json
+
+# внутри сессии:
+/mcp list
+/agents
+/hotkeys
+/advisor status</code></pre>
+        <ul class="tasks">
+          <li><label class="task"><input type="checkbox" data-task="p8-config"><span class="body">
+            <code>approvalMode</code> вернул <code>write</code>, <code>isolation.backend</code> — <code>rcopy</code></span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p8-mcp"><span class="body">
+            <code>/mcp list</code> показывает ожидаемые серверы и источник конфига</span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p8-agents"><span class="body">
+            <code>/agents</code> видит ваших агентов, <code>/hotkeys</code> — ремапы</span></label></li>
+          <li><label class="task"><input type="checkbox" data-task="p8-skills"><span class="body">
+            В системном промпте видны только нужные скиллы</span></label></li>
+        </ul>
+      </section>
+
+      <nav class="pager" aria-label="Навигация по разделам">
+        <a href="index.html"><span class="dir">Назад</span>← Обзор</a>
+        <a class="next" href="config.html"><span class="dir">Дальше</span>Конфиги →</a>
+      </nav>
+    </main>
+  </div>
+</div>
+<script src="assets/wiki.js"></script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Источники — OMP × Orca</title>
+<link rel="stylesheet" href="assets/wiki.css">
+</head>
+<body data-page-title="Источники">
+<a class="skip" href="#main">К содержимому</a>
+<div class="shell">
+
+  <aside class="sidebar" aria-label="Навигация">
+    <a class="brand" href="index.html"><span class="dot"></span> OMP × Orca</a>
+    <p class="brand-sub">Настройка · ноябрь 2026</p>
+
+    <div class="search">
+      <input id="searchInput" type="search" placeholder="Поиск (Ctrl+K)" aria-label="Поиск по вики" autocomplete="off">
+      <div class="search-results" id="searchResults" role="listbox"></div>
+    </div>
+
+    <p class="nav-group-title">Разделы</p>
+    <ul class="nav-list">
+      <li><a href="index.html"><span class="num">0</span>Обзор</a></li>
+      <li><a href="setup.html"><span class="num">1</span>Настройка</a></li>
+      <li><a href="config.html"><span class="num">2</span>Конфиги</a></li>
+      <li><a href="orca.html"><span class="num">3</span>Orca и OMP</a></li>
+      <li><a href="orchestration.html"><span class="num">4</span>Оркестрация</a></li>
+      <li><a href="sources.html"><span class="num">5</span>Источники</a></li>
+    </ul>
+
+    <p class="nav-group-title">На этой странице</p>
+    <ul class="toc" id="toc"></ul>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn sidebar-toggle" id="navToggle" type="button" aria-label="Открыть меню">☰</button>
+      <div class="crumbs">Вики / <b id="crumbTitle">Источники</b></div>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeBtn" type="button">◐ Авто</button>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+      <div class="page-head">
+        <p class="eyebrow">Раздел 5</p>
+        <h1>Источники и статус</h1>
+        <p class="lead">Что читалось, что проверялось командами на этой машине и где остались белые пятна.</p>
+      </div>
+
+      <h2 id="links">Источники</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Источник</th><th>Дата</th><th>Что взято</th></tr></thead>
+          <tbody>
+          <tr><td><code>omp://settings.md</code>, <code>mcp-config.md</code>, <code>skills.md</code>, <code>task-agent-discovery.md</code>, <code>approval-mode.md</code>, <code>config-usage.md</code></td><td>19.1.0</td><td>Ключи, пути, precedence, семантика approval и task</td></tr>
+          <tr><td><code>cfg://</code></td><td>эта сборка</td><td>Фактические дефолты</td></tr>
+          <tr><td><code>orca skills get orca-cli</code>, <code>orca skills get orchestration</code></td><td>1.4.268</td><td>Команды, handoff, worker, mail</td></tr>
+          <tr><td><a href="https://james-carr.org/posts/2026-09-30-current-agentic-development-setup-orca-oh-my-pi/">james-carr.org — Orca + Oh My Pi</a></td><td>2026-09-30</td><td>Разделение слоёв, роли моделей, prewalk</td></tr>
+          <tr><td><a href="https://james-carr.org/posts/2026-10-02-building-your-own-advisors-in-oh-my-pi/">james-carr.org — advisors</a></td><td>2026-10-02</td><td>WATCHDOG, roster вытесняет дефолтного advisor</td></tr>
+          <tr><td><a href="https://github.com/can1357/oh-my-pi/issues/18407">GH #18407</a></td><td>2026-11-07</td><td>Sandbox отсутствует; workaround — restrictedFolders</td></tr>
+          <tr><td><a href="https://github.com/can1357/oh-my-pi/issues/18205">GH #18205</a></td><td>2026-11-05</td><td><code>lsp.enabled: false</code> не отключает LSP из write/edit</td></tr>
+          <tr><td><a href="https://github.com/can1357/oh-my-pi/issues/7316">GH #7316</a></td><td>2026-08-01</td><td>Wayland: нужен <code>wl-clipboard</code> для вставки картинок</td></tr>
+          <tr><td><a href="https://github.com/can1357/oh-my-pi/issues/18519">GH #18519</a></td><td>2026-11-08</td><td>Утечка <code>~/.omp/wt/*</code> при SIGHUP</td></tr>
+          <tr><td><a href="https://www.reddit.com/r/PiCodingAgent/comments/1xy7ovw/updates_on_ohmypi_quietly_siphoning_user_web_data/">r/PiCodingAgent — Parallel</a></td><td>2026-11-17</td><td>Keyless Parallel включён по умолчанию</td></tr>
+          <tr><td><a href="https://www.reddit.com/r/PiCodingAgent/comments/1wb0ehv/do_lsps_improve_pi_agents/">r/PiCodingAgent — LSP A/B</a></td><td>2026-09-08</td><td>−6.4% токенов, но скор упал у 2 из 3 моделей</td></tr>
+          <tr><td><a href="https://news.ycombinator.com/item?id=49539332">HN 49539332</a></td><td>2026-09-02</td><td>Критика hashline-правок и «лишних фич»</td></tr>
+          <tr><td><a href="https://noahlaratta.com/lab/oh-my-pi">noahlaratta.com</a></td><td>2026-06-25</td><td>Профили, approval-режимы (часть советов устарела)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="status">Что проверено</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Утверждение</th><th>Как проверено</th><th>Статус</th></tr></thead>
+          <tbody>
+          <tr><td><code>approvalMode</code> = <code>yolo</code></td><td><code>omp config get tools.approvalMode</code></td><td><span class="badge ok">факт</span></td></tr>
+          <tr><td>Корень — ext4</td><td><code>df -T .</code></td><td><span class="badge ok">факт</span></td></tr>
+          <tr><td>Запуск OMP из Orca</td><td><code>/proc/&lt;pid&gt;/cmdline</code></td><td><span class="badge ok">факт</span></td></tr>
+          <tr><td>Env-переменные Orca</td><td><code>/proc/&lt;pid&gt;/environ</code></td><td><span class="badge ok">факт</span></td></tr>
+          <tr><td>Реестр скиллов пуст</td><td><code>omp skill search git --json</code> → пусто</td><td><span class="badge ok">факт</span></td></tr>
+          <tr><td>Orca-скиллы в <code>~/.agents/skills</code></td><td><code>orca skills install --all --dry-run</code></td><td><span class="badge ok">факт</span></td></tr>
+          <tr><td>OMP видит 5 скиллов оттуда</td><td>Системный промпт этой сессии</td><td><span class="badge ok">факт</span></td></tr>
+          <tr><td>Права файлов агента: <code>config.yml</code>/<code>agent.db</code> 0600, <code>history.db</code> 0644</td><td><code>stat -c '%a %n'</code></td><td><span class="badge ok">факт</span></td></tr>
+          <tr><td>Node 22.23, uv 0.13.9, gh 2.46, docker нет</td><td><code>node -v</code>, <code>uv --version</code>, <code>gh --version</code>, <code>docker</code></td><td><span class="badge ok">факт</span></td></tr>
+          <tr><td>MCP-серверы не запускались</td><td>—</td><td><span class="badge warn">не проверено</span></td></tr>
+          <tr><td>LSP-серверы не поднимались</td><td>—</td><td><span class="badge warn">не проверено</span></td></tr>
+          <tr><td><code>orca skills install</code> без dry-run</td><td>—</td><td><span class="badge warn">не проверено</span></td></tr>
+          <tr><td>Воркер Orca с OMP не запускался</td><td>—</td><td><span class="badge warn">не проверено</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="gaps">Белые пятна</h2>
+      <ul>
+        <li>Свежих гайдов под Debian 13 в публичном вебе нет: ноябрь 2026 — это почти только GitHub issues.</li>
+        <li>Reddit-комментарии недоступны читалке (403 на <code>.json</code>), поэтому часть тредов дала только заголовки.</li>
+        <li>Часть блогов не открылась (deepakness, doug.sh, scottspence) — их содержимое не выдумывалось.</li>
+        <li>Dotfiles мейнтейнера <code>can1357</code> не найдены.</li>
+      </ul>
+
+      <h2 id="docs">Файлы в репозитории</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Файл</th><th>Что это</th></tr></thead>
+          <tbody>
+          <tr><td><code>docs/omp-setup-2026-11.md</code></td><td>Исходный markdown-док: чек-лист, конфиги, Orca, оркестрация</td></tr>
+          <tr><td><code>docs/wiki/index.html</code></td><td>Эта вики (офлайн, без зависимостей)</td></tr>
+          <tr><td><code>docs/wiki/assets/wiki.css</code>, <code>wiki.js</code></td><td>Стили и поведение</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <span class="tag">Как открыть</span>
+        Файл <code>docs/wiki/index.html</code> открывается напрямую из файловой системы — сервер не нужен.
+        Поиск: <kbd>Ctrl</kbd>+<kbd>K</kbd>, тема переключается кнопкой справа сверху, отметки в чек-листе
+        хранятся в localStorage браузера.
+      </div>
+
+      <nav class="pager" aria-label="Навигация по разделам">
+        <a href="orchestration.html"><span class="dir">Назад</span>← Оркестрация</a>
+        <a class="next" href="index.html"><span class="dir">В начало</span>Обзор →</a>
+      </nav>
+    </main>
+  </div>
+</div>
+<script src="assets/wiki.js"></script>
+</body>
+</html>
